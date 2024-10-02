@@ -6,73 +6,61 @@ from sly import Lexer
 # noinspection PyUnresolvedReferences,PyUnboundLocalVariable
 class MatrixScanner(Lexer):
     tokens = {
-        PLUS, MINUS, TIMES, DIVIDE,
-        PLUS_DOT, MINUS_DOT, TIMES_DOT, DIVIDE_DOT,
-        ASSIGN, PLUS_ASSIGN, MINUS_ASSIGN, TIMES_ASSIGN, DIVIDE_ASSIGN,
-        LESS, GREATER, LESS_EQUAL, GREATER_EQUAL, NOT_EQUAL, EQUAL,
-        LPAREN, RPAREN, LBRACKET, RBRACKET, LBRACE, RBRACE,
-        RANGE, TRANSPOSE, COMMA, SEMICOLON,
+        DOTADD, DOTSUB, DOTMUL, DOTDIV,
+        ADDASSIGN, SUBASSIGN, MULASSIGN, DIVASSIGN,
+        LESS_EQUAL, GREATER_EQUAL, NOT_EQUAL, EQUAL,
         IF, ELSE, FOR, WHILE, BREAK, CONTINUE, RETURN, EYE, ZEROS, ONES, PRINT,
-        ID, INT, FLOAT, STRING
+        ID, INTNUM, FLOAT, STRING
+    }
+
+    literals = {
+        # relation operators
+        '<', '>',
+        # assignment operators
+        '=',
+        # binary operators
+        '+', '-', '*', '/',
+        # brackets
+        '(', ')', '[', ']', '{', '}',
+        # other
+        ':', "'", ',', ';'
     }
 
     # matrix binary operators
-    PLUS_DOT = r'\.\+'
-    MINUS_DOT = r'\.-'
-    TIMES_DOT = r'\.\*'
-    DIVIDE_DOT = r'\./'
+    DOTADD = r'\.\+'
+    DOTSUB = r'\.-'
+    DOTMUL = r'\.\*'
+    DOTDIV = r'\./'
 
     # relation operators
     LESS_EQUAL = r'<='
     GREATER_EQUAL = r'>='
-    LESS = r'<'
-    GREATER = r'>'
     NOT_EQUAL = r'!='
     EQUAL = r'=='
 
     # assignment operators
-    ASSIGN = r'='
-    PLUS_ASSIGN = r'\+='
-    MINUS_ASSIGN = r'-='
-    TIMES_ASSIGN = r'\*='
-    DIVIDE_ASSIGN = r'/='
-
-    # binary operators
-    PLUS = '\+'
-    MINUS = r'-'
-    TIMES = r'\*'
-    DIVIDE = r'/'
-
-    # brackets
-    LPAREN = r'\('
-    RPAREN = r'\)'
-    LBRACKET = r'\['
-    RBRACKET = r'\]'
-    LBRACE = r'\{'
-    RBRACE = r'\}'
-
-    # other
-    RANGE = r':'
-    TRANSPOSE = r"'"
-    COMMA = r','
-    SEMICOLON = r';'
-
-    # keywords
-    IF = r'if'
-    ELSE = r'else'
-    FOR = r'for'
-    WHILE = r'while'
-    BREAK = r'break'
-    CONTINUE = r'continue'
-    RETURN = r'return'
-    EYE = r'eye'
-    ZEROS = r'zeros'
-    ONES = r'ones'
-    PRINT = r'print'
+    ADDASSIGN = r'\+='
+    SUBASSIGN = r'-='
+    MULASSIGN = r'\*='
+    DIVASSIGN = r'/='
 
     ID = r'[a-zA-Z_][a-zA-Z0-9_]*'
-    FLOAT = r'[+-]?(\d+\.\d+|\.\d+|\d+\.)'
-    INT = r'[+-]?[0-9]+'
+
+    # keywords
+    ID['if'] = IF
+    ID['else'] = ELSE
+    ID['for'] = FOR
+    ID['while'] = WHILE
+    ID['break'] = BREAK
+    ID['continue'] = CONTINUE
+    ID['return'] = RETURN
+    ID['eye'] = EYE
+    ID['zeros'] = ZEROS
+    ID['ones'] = ONES
+    ID['print'] = PRINT
+
+    INTNUM = r'[+-]?[0-9]+'
+    FLOAT = r'[+-]?(\d+(\.\d*)?([eE][+-]?\d+)?|\.\d+([eE][+-]?\d+)?)'  # tests: https://regex101.com/r/Obq7Y4/1
     STRING = r'".*"'
 
     ignore = ' \t'
@@ -89,8 +77,8 @@ class MatrixScanner(Lexer):
 
 if __name__ == '__main__':
     try:
-        # filename = sys.argv[1] if len(sys.argv) > 1 else "example.txt"
         filename = sys.argv[1] if len(sys.argv) > 1 else "example.txt"
+        # filename = sys.argv[1] if len(sys.argv) > 1 else "example_full.txt"
         file = open(filename, "r")
     except IOError:
         print("Cannot open {0} file".format(filename))
