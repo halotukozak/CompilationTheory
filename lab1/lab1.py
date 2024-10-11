@@ -78,7 +78,7 @@ class MatrixScanner(Lexer):
 if __name__ == '__main__':
     try:
         # filename = sys.argv[1] if len(sys.argv) > 1 else "example.txt"
-        filename = sys.argv[1] if len(sys.argv) > 1 else "/home/fabio/Documents/kompilatory/CompilationTheory/lab1/example_full.txt"
+        filename = sys.argv[1] if len(sys.argv) > 1 else "example_full.txt"
         file = open(filename, "r")
     except IOError:
         print("Cannot open {0} file".format(filename))
