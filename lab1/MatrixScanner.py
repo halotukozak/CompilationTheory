@@ -59,9 +59,9 @@ class MatrixScanner(Lexer):
     ID['ones'] = ONES
     ID['print'] = PRINT
 
-    FLOAT = r'[+-]?(\d+(\.\d*)([eE][+-]?\d+)?|\.\d+([eE][+-]?\d+)?)' # https://regex101.com/r/Obq7Y4/1
-    INTNUM = r'[+-]?[0-9]+'  
-    STRING = r'".*"'
+    FLOAT = r'(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?' # https://regex101.com/r/Obq7Y4/1
+    INTNUM = r'[0-9]+'
+    STRING = r'"[^"]*"'
 
     ignore = ' \t'
     ignore_comment = r'\#.*'
@@ -77,8 +77,8 @@ class MatrixScanner(Lexer):
 
 if __name__ == '__main__':
     try:
-        # filename = sys.argv[1] if len(sys.argv) > 1 else "example.txt"
-        filename = sys.argv[1] if len(sys.argv) > 1 else "example_full.txt"
+        filename = sys.argv[1] if len(sys.argv) > 1 else "example.txt"
+        # filename = sys.argv[1] if len(sys.argv) > 1 else "example_full.txt"
         file = open(filename, "r")
     except IOError:
         print("Cannot open {0} file".format(filename))
