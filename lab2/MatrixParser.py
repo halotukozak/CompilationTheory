@@ -12,7 +12,6 @@ class MatrixParser(Parser):
 
     start = 'program'
 
-    # Precedence rules (similar structure to PLY)
     precedence = (
         ('nonassoc', 'IFX'),
         ('nonassoc', 'ELSE'),
