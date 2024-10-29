@@ -1,9 +1,11 @@
 import sys
 
+from prompt_toolkit.contrib.regular_languages.regex_parser import Variable
 from sly import Parser
 
 # sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lab1.MatrixScanner import MatrixScanner
+from lab3.AST import *
 
 
 # noinspection PyUnresolvedReferences,PyUnboundLocalVariable
@@ -26,51 +28,51 @@ class MatrixParser(Parser):
         ('left', "'"),
     )
 
-    @_('instructions_opt')
+    @_('blocks_opt')
     def program(self, p):
         pass
 
-    @_('instructions')
-    def instructions_opt(self, p):
+    @_('blocks')
+    def blocks_opt(self, p):
         pass
 
     @_('')
-    def instructions_opt(self, p):
+    def blocks_opt(self, p):
         pass
 
-    @_('instruction')
-    def instructions(self, p):
-        pass
+    @_('block')
+    def blocks(self, p):
+        return Block(p.block)
 
-    @_('instruction instructions')
-    def instructions(self, p):
+    @_('block blocks')
+    def blocks(self, p):
         pass
 
     @_('assignment ";"',
        'statement ";"',
-       '"{" instructions "}"')
-    def instruction(self, p):
-        pass
+       '"{" blocks "}"')
+    def block(self, p):
+        return block(p[0])
 
-    @_('IF "(" condition ")" instruction %prec IFX')
-    def instruction(self, p):
-        pass
+    @_('IF "(" condition ")" block %prec IFX')
+    def block(self, p):
+        return IF(p.condition, p.block, None)
 
-    @_('IF "(" condition ")" instruction ELSE instruction')
-    def instruction(self, p):
-        pass
+    @_('IF "(" condition ")" block ELSE block')
+    def block(self, p):
+        return IF(p.condition, p.block0, p.block1)
 
-    @_('WHILE "(" condition ")" instruction')
-    def instruction(self, p):
-        pass
+    @_('WHILE "(" condition ")" block')
+    def block(self, p):
+        return WHILE(p.condition, p.block)
 
-    @_('FOR var "=" range instruction')
-    def instruction(self, p):
-        pass
+    @_('FOR var "=" range block')
+    def block(self, p):
+        return FOR(p.var, p.range, p.block)
 
     @_('expression ":" expression')
     def range(self, p):
-        pass
+        return Range(p[0], p[1])
 
     @_('expression EQUAL expression',
        'expression NOT_EQUAL expression',
@@ -79,17 +81,16 @@ class MatrixParser(Parser):
        'expression "<" expression',
        'expression ">" expression')
     def condition(self, p):
-        pass
+        return Condition(p.expression0, p[1], p.expression1)
 
     @_('MULASSIGN', 'DIVASSIGN', 'SUBASSIGN', 'ADDASSIGN', '"="')
     def assignment_op(self, p):
-        pass
+        return AssignmentOperator(p[0])
 
     @_('var assignment_op expression',
-       'matrix_element assignment_op expression',
-       'vector_element assignment_op expression')
+       'element assignment_op expression')
     def assignment(self, p):
-        pass
+        return Assignment(p[0], p.assignment_op, p.expression)
 
     @_('matrix_function_name "(" INTNUM ")"')
     def matrix_function(self, p):
@@ -119,7 +120,7 @@ class MatrixParser(Parser):
 
     @_('number', 'var', 'element')
     def variable(self, p):
-        pass
+        return Variable(p[0])
 
     @_('vector_element', 'matrix_element')
     def element(self, p):
@@ -135,15 +136,15 @@ class MatrixParser(Parser):
 
     @_('ID')
     def var(self, p):
-        pass
+        return Var(p[0])
 
     @_('INTNUM', 'FLOAT')
     def number(self, p):
-        pass
+        return Number(p[0])
 
     @_('STRING')
     def string(self, p):
-        pass
+        return String(p[0])
 
     @_('expression "+" expression',
        'expression "-" expression',
@@ -154,39 +155,39 @@ class MatrixParser(Parser):
        'expression DOTMUL expression',
        'expression DOTDIV expression')
     def expression(self, p):
-        pass
+        return BinaryOperator(p[1], p.expr0, p.expr1)
 
     @_('num_expression', 'matrix', 'matrix_function', 'uminus', 'transposition', 'matrix_element', 'vector_element')
     def expression(self, p):
-        pass
+        return Expr(p[0])
 
     @_('number', 'var')
     def num_expression(self, p):
         pass
 
     @_('"-" expression %prec UMINUS')
-    def uminus(self, p):
-        pass
+    def expression(self, p):
+        return UnaryOperator(p[0], p.expression)
 
     @_('expression "\'"')
-    def transposition(self, p):
-        pass
+    def expression(self, p):
+        return UnaryOperator(p.expression, p[1])
 
     @_('BREAK')
     def statement(self, p):
-        pass
+        return Break
 
     @_('CONTINUE')
     def statement(self, p):
-        pass
+        return CONTINUE
 
     @_('RETURN expression')
     def statement(self, p):
-        pass
+        return Return(p.expression)
 
     @_('PRINT print_vals')
     def statement(self, p):
-        pass
+        return PRINT(p[0])
 
     @_('print_vals "," print_val',
        'print_val')
