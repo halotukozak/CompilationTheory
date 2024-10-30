@@ -1,6 +1,5 @@
 import sys
 
-from prompt_toolkit.contrib.regular_languages.regex_parser import Variable
 from sly import Parser
 
 # sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -8,7 +7,6 @@ from lab1.MatrixScanner import MatrixScanner
 from lab3.AST import *
 
 
-# noinspection PyUnresolvedReferences,PyUnboundLocalVariable
 class MatrixParser(Parser):
     tokens = MatrixScanner.tokens
 
@@ -18,7 +16,6 @@ class MatrixParser(Parser):
     precedence = (
         ('nonassoc', 'IFX'),
         ('nonassoc', 'ELSE'),
-        ('right', 'MULASSIGN', 'DIVASSIGN', 'SUBASSIGN', 'ADDASSIGN'),
         ('nonassoc', '<', '>', 'LESS_EQUAL', 'GREATER_EQUAL', 'NOT_EQUAL', 'EQUAL'),
         ('left', '+', '-'),
         ('left', 'DOTADD', 'DOTSUB'),
@@ -28,150 +25,146 @@ class MatrixParser(Parser):
         ('left', "'"),
     )
 
-    @_('blocks_opt')
+    @_('statements')
     def program(self, p):
-        pass
-
-    @_('blocks')
-    def blocks_opt(self, p):
-        pass
+        return Block(p.statements)
 
     @_('')
-    def blocks_opt(self, p):
-        pass
+    def statement(self, p):
+        return []
 
-    @_('block')
-    def blocks(self, p):
-        return Block(p.block)
+    @_('statements ";" statement')
+    def statements(self, p):
+        return p.statements + [p.statement]
 
-    @_('block blocks')
-    def blocks(self, p):
-        pass
+    @_('"{" statements "}"')
+    def statements(self, p):
+        return p.statements
 
-    @_('assignment ";"',
-       'statement ";"',
-       '"{" blocks "}"')
+    @_('statements')
     def block(self, p):
-        return block(p[0])
+        return Block(p.statements)
 
     @_('IF "(" condition ")" block %prec IFX')
-    def block(self, p):
-        return IF(p.condition, p.block, None)
+    def statement(self, p):
+        return If(p.condition, p.block, None)
 
     @_('IF "(" condition ")" block ELSE block')
-    def block(self, p):
-        return IF(p.condition, p.block0, p.block1)
+    def statement(self, p):
+        return If(p.condition, p.block0, p.block1)
 
     @_('WHILE "(" condition ")" block')
-    def block(self, p):
-        return WHILE(p.condition, p.block)
+    def statement(self, p):
+        return While(p.condition, p.block)
 
     @_('FOR var "=" range block')
-    def block(self, p):
-        return FOR(p.var, p.range, p.block)
+    def statement(self, p):
+        return For(p.var, p.range, p.block)
 
-    @_('expression ":" expression')
+    @_('num_expr ":" num_expr')
     def range(self, p):
-        return Range(p[0], p[1])
+        return Range(p.num_expr0, p.num_expr1)
 
-    @_('expression EQUAL expression',
-       'expression NOT_EQUAL expression',
-       'expression LESS_EQUAL expression',
-       'expression GREATER_EQUAL expression',
-       'expression "<" expression',
-       'expression ">" expression')
+    @_('expr EQUAL expr',
+       'expr NOT_EQUAL expr',
+       'expr LESS_EQUAL expr',
+       'expr GREATER_EQUAL expr',
+       'expr "<" expr',
+       'expr ">" expr')
     def condition(self, p):
-        return Condition(p.expression0, p[1], p.expression1)
+        return Apply(p[1], [p.expr0, p.expr1])
 
     @_('MULASSIGN', 'DIVASSIGN', 'SUBASSIGN', 'ADDASSIGN', '"="')
-    def assignment_op(self, p):
-        return AssignmentOperator(p[0])
+    def assign_op(self, p):
+        return p[0]
 
-    @_('var assignment_op expression',
-       'element assignment_op expression')
-    def assignment(self, p):
-        return Assignment(p[0], p.assignment_op, p.expression)
+    @_('var assign_op expr',
+       'element assign_op expr')
+    def statement(self, p):
+        return Assign(p[0], p.assign_op, p.expr)
 
     @_('matrix_function_name "(" INTNUM ")"')
     def matrix_function(self, p):
-        pass
+        return Apply(p.matrix_function_name, [p.INTNUM])
 
     @_('EYE', 'ONES', 'ZEROS')
     def matrix_function_name(self, p):
-        pass
+        return Ref(p[0])
 
-    @_('"[" vectors "]"')
+    @_('"[" matrix_varargs "]"')
     def matrix(self, p):
-        pass
+        return Matrix(p.matrix_varargs)
 
-    @_('vectors "," vector',
-       'vector')
-    def vectors(self, p):
-        pass
+    @_('matrix_varargs "," vector')
+    def matrix_varargs(self, p):
+        return p.matrix_varargs + [p.vector]
 
-    @_('"[" variables "]"')
+    @_('vector')
+    def matrix_varargs(self, p):
+        return [p.vector]
+
+    @_('"[" vector_varargs "]"')
     def vector(self, p):
-        pass
+        return Vector(p.vector_varargs)
 
-    @_('variables "," variable',
-       'variable')
-    def variables(self, p):
-        pass
+    @_('vector_varargs "," INTNUM')
+    def vector_varargs(self, p):
+        return p.vector_varargs + [p.INTNUM]
 
-    @_('number', 'var', 'element')
-    def variable(self, p):
-        return Variable(p[0])
+    @_('INTNUM')
+    def vector_varargs(self, p):
+        return [p.INTNUM]
 
     @_('vector_element', 'matrix_element')
     def element(self, p):
-        pass
+        return Ref(p[0])
 
     @_('ID "[" INTNUM "]"')
     def vector_element(self, p):
-        pass
+        return VectorRef(p.ID, p.INTNUM)
 
     @_('ID "[" INTNUM "," INTNUM "]"')
     def matrix_element(self, p):
-        pass
+        return MatrixRef(p.ID, p.INTNUM0, p.INTNUM1)
 
     @_('ID')
     def var(self, p):
-        return Var(p[0])
+        return Ref(p[0])
 
     @_('INTNUM', 'FLOAT')
     def number(self, p):
-        return Number(p[0])
+        return p[0]
 
     @_('STRING')
-    def string(self, p):
-        return String(p[0])
+    def expr(self, p):
+        return p[0]
 
-    @_('expression "+" expression',
-       'expression "-" expression',
-       'expression "*" expression',
-       'expression "/" expression',
-       'expression DOTADD expression',
-       'expression DOTSUB expression',
-       'expression DOTMUL expression',
-       'expression DOTDIV expression')
-    def expression(self, p):
-        return BinaryOperator(p[1], p.expr0, p.expr1)
+    @_('num_expr "+" num_expr',
+       'num_expr "-" num_expr',
+       'num_expr "*" num_expr',
+       'num_expr "/" num_expr',
+       'expr DOTADD expr',
+       'expr DOTSUB expr',
+       'expr DOTMUL expr',
+       'expr DOTDIV expr')
+    def expr(self, p):
+        return Apply(Ref(p[1]), [p[0], p[2]])
 
-    @_('num_expression', 'matrix', 'matrix_function', 'uminus', 'transposition', 'matrix_element', 'vector_element')
-    def expression(self, p):
-        return Expr(p[0])
+    @_('num_expr', 'matrix', 'matrix_function', 'matrix_element', 'vector_element')
+    def expr(self, p):
+        return p[0]
 
     @_('number', 'var')
-    def num_expression(self, p):
-        pass
+    def num_expr(self, p):
+        return p[0]
 
-    @_('"-" expression %prec UMINUS')
-    def expression(self, p):
-        return UnaryOperator(p[0], p.expression)
+    @_('"-" expr %prec UMINUS')
+    def expr(self, p):
+        return Apply(Ref(p[0]), p.expr)
 
-    @_('expression "\'"')
-    def expression(self, p):
-        return UnaryOperator(p.expression, p[1])
+    @_('expr "\'"')
+    def expr(self, p):
+        return Apply(Ref(p[1]), p.expr)
 
     @_('BREAK')
     def statement(self, p):
@@ -179,26 +172,24 @@ class MatrixParser(Parser):
 
     @_('CONTINUE')
     def statement(self, p):
-        return CONTINUE
+        return Continue
 
-    @_('RETURN expression')
+    @_('RETURN expr')
     def statement(self, p):
-        return Return(p.expression)
+        return Return(p.expr)
 
-    @_('PRINT print_vals')
+    @_('PRINT print_args')
     def statement(self, p):
-        return PRINT(p[0])
+        return Apply(Ref(p[0]), p.print_args)
 
-    @_('print_vals "," print_val',
-       'print_val')
-    def print_vals(self, p):
-        pass
+    @_('print_args "," expr')
+    def print_args(self, p):
+        return p.print_args + [p.expr]
 
-    @_('string', 'expression')
-    def print_val(self, p):
-        pass
+    @_('expr')
+    def print_args(self, p):
+        return [p.expr]
 
-    # Error handling
     def error(self, p):
         if p:
             print(f"Syntax error at line {p.lineno}: {p.type}('{p.value}')")
@@ -218,4 +209,5 @@ if __name__ == '__main__':
     lexer = MatrixScanner()
     parser = MatrixParser()
 
-    parser.parse(lexer.tokenize(text))
+    result = parser.parse(lexer.tokenize(text))
+    result.printTree()

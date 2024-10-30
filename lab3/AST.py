@@ -1,111 +1,132 @@
-import numbers
 from dataclasses import dataclass
 
 
-class Block:
+# +- Tree -+- Statement -+
+#                        +- Fun
+#                        |
+#                        +- Expr --------+- Ref --------+- VectorRef
+#                        |               |              +- MatrixRef
+#                        |               +- Apply
+#                        |               +- Number
+#                        |               +- Range
+#                        |               +- Vector
+#                        |               +- Matrix
+#                        +- Assign
+#                        +- If
+#                        +- While
+#                        +- For
+#                        +- Return
+#                        +- Continue
+#                        +- Break
+#                        +- Block
+
+
+class Tree:
     pass
 
 
-class Expr:
-    pass
+class Statement(Tree):
+    def printTree(self):
+        print(self)
 
 
 @dataclass
-class Operator:
-    sign: str
-
-
-@dataclass
-class UnaryOperator(Expr):
-    op: Operator
-    expr: Expr
-
-
-@dataclass
-class BinaryOperator(Expr):
-    left: Expr
-    right: Expr
-
-
-@dataclass
-class AssignmentOperator(Operator):
-    pass
-
-@dataclass
-class ConditionOperator(Operator):
-    pass
-@dataclass
-class Number(Expr):
-    value: numbers.Number
-
-
-@dataclass
-class String(Expr):
-    value: str
-
-
-@dataclass
-class Condition(Expr):
-    left: Expr
-    op: ConditionOperator
-    right: Expr
-
-@dataclass
-class If(Expr):
-    condition: Condition
-    then: Expr
-    else_: Expr
-
-
-@dataclass
-class While(Expr):
-    condition: Condition
-    body: Expr
-
-
-@dataclass
-class Range(Expr):
-    start: Number
-    end: Number
-
-
-@dataclass
-class Var(Expr):
+class Fun(Statement):
     name: str
-    value: Expr
 
 
-class Statement(Block):
+class Expr[T](Statement):
     pass
 
 
 @dataclass
-class For(Expr):
-    var: Var
+class Ref(Expr):  # [T]?
+    symbol: str
+
+
+@dataclass
+class VectorRef(Expr):
+    vector: Ref
+    element: int
+
+
+@dataclass
+class MatrixRef(Expr):
+    matrix: Ref
+    row: int
+    col: int
+
+
+@dataclass
+class Apply[T](Expr[T]):
+    fun: Ref
+    args: list[Expr]
+
+
+@dataclass
+class Number(Expr[int | float]):
+    value: int | float
+
+
+@dataclass
+class Range(Expr[list[int]]):
+    start: int
+    end: int
+
+
+@dataclass
+class Vector(Expr[list[Number]]):
+    elements: list[Number]
+
+
+@dataclass
+class Matrix(Expr[list[Vector]]):
+    vectors: list[Vector]
+
+
+@dataclass
+class Assign(Statement):  # [T]?
+    var: Ref
+    op: str
+    expr: Expr
+
+
+@dataclass
+class If(Statement):
+    condition: Expr[bool]
+    then: list[Statement]
+    else_: list[Statement] | None
+
+
+@dataclass
+class While(Statement):
+    condition: Expr[bool]
+    body: list[Statement]
+
+
+@dataclass
+class For(Statement):
+    var: Ref
     range: Range
-    block: Block
+    body: list[Statement]
 
 
 @dataclass
-class Assignment(Block):
-    var: Var
-    op: AssignmentOperator
+class Return(Statement):
     expr: Expr
 
 
-class CONTINUE(Block):
+class Continue(Statement):
     pass
 
 
-class Break(Block):
+class Break(Statement):
     pass
 
 
 @dataclass
-class Return(Block):
-    expr: Expr
+class Block(Statement):
+    statements: list[Statement]
 
-
-@dataclass
-class VarArg(Expr):
-    elements: list[Expr]
+    def __init__(self, *statements):
+        self.statements = list(statements)
