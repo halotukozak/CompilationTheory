@@ -4,13 +4,16 @@ from dataclasses import dataclass
 # +- Tree -+- Statement -+
 #                        +- Fun
 #                        |
-#                        +- Expr --------+- Ref --------+- VectorRef
-#                        |               |              +- MatrixRef
+#                        +- Expr --------+
 #                        |               +- Apply
 #                        |               +- Number
+#                        |               +- String
 #                        |               +- Range
 #                        |               +- Vector
 #                        |               +- Matrix
+#                        |               +- Ref --------+- VectorRef
+#                        |                              +- MatrixRef
+#                        |                              +- SymbolRef
 #                        +- Assign
 #                        +- If
 #                        +- While
@@ -18,8 +21,6 @@ from dataclasses import dataclass
 #                        +- Return
 #                        +- Continue
 #                        +- Break
-#                        +- Block
-
 
 class Tree:
     pass
@@ -40,19 +41,33 @@ class Expr[T](Statement):
 
 
 @dataclass
-class Ref(Expr):  # [T]?
+class Vector(Expr):
+    elements: list[int | float]
+
+
+@dataclass
+class Matrix(Expr):
+    vectors: list[Vector]
+
+
+class Ref[T](Expr[T]):
+    pass
+
+
+@dataclass
+class SymbolRef[T](Ref[T]):
     symbol: str
 
 
 @dataclass
-class VectorRef(Expr):
-    vector: Ref
+class VectorRef(Ref[Vector]):
+    vector: Ref[Vector]
     element: int
 
 
 @dataclass
-class MatrixRef(Expr):
-    matrix: Ref
+class MatrixRef(Ref[Matrix]):
+    matrix: Ref[Matrix]
     row: int
     col: int
 
@@ -60,35 +75,20 @@ class MatrixRef(Expr):
 @dataclass
 class Apply[T](Expr[T]):
     fun: Ref
-    args: list[Expr]
+    args: list[Expr | int | float | str]
 
 
 @dataclass
-class Number(Expr[int | float]):
-    value: int | float
-
-
-@dataclass
-class Range(Expr[list[int]]):
-    start: int
-    end: int
-
-
-@dataclass
-class Vector(Expr[list[Number]]):
-    elements: list[Number]
-
-
-@dataclass
-class Matrix(Expr[list[Vector]]):
-    vectors: list[Vector]
+class Range(Expr):
+    start: Expr[int] | int
+    end: Expr[int] | int
 
 
 @dataclass
 class Assign(Statement):  # [T]?
     var: Ref
     op: str
-    expr: Expr
+    expr: Expr | int | float | str
 
 
 @dataclass
@@ -122,11 +122,3 @@ class Continue(Statement):
 
 class Break(Statement):
     pass
-
-
-@dataclass
-class Block(Statement):
-    statements: list[Statement]
-
-    def __init__(self, *statements):
-        self.statements = list(statements)
