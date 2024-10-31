@@ -67,7 +67,7 @@ class VectorRef(Ref[Vector]):
 
 @dataclass
 class MatrixRef(Ref[Matrix]):
-    matrix: Ref[Matrix]
+    matrix: SymbolRef
     row: int
     col: int
 

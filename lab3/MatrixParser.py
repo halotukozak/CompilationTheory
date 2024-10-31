@@ -2,7 +2,6 @@ import sys
 
 from sly import Parser
 
-# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lab1.MatrixScanner import MatrixScanner
 from lab3.AST import *
 
@@ -52,9 +51,9 @@ class MatrixParser(Parser):
     def block(self, p):
         return p.instructions
 
-    @_('instructions')
+    @_('instruction')
     def block(self, p):
-        return p.instructions
+        return [p.instruction]
 
     @_('IF "(" condition ")" block %prec IFX')
     def instruction(self, p):
@@ -132,11 +131,11 @@ class MatrixParser(Parser):
 
     @_('ID "[" INTNUM "]"')
     def vector_element(self, p):
-        return VectorRef(p.ID, p.INTNUM)
+        return VectorRef(SymbolRef(p.ID), p.INTNUM)
 
     @_('ID "[" INTNUM "," INTNUM "]"')
     def matrix_element(self, p):
-        return MatrixRef(p.ID, int(p.INTNUM0), int(p.INTNUM1))
+        return MatrixRef(SymbolRef(p.ID), int(p.INTNUM0), int(p.INTNUM1))
 
     @_('ID')
     def var(self, p):
@@ -153,7 +152,7 @@ class MatrixParser(Parser):
     def expr(self, p):
         return Apply(SymbolRef(p[1]), [p[0], p[2]])
 
-    @_('num_expr', 'matrix', 'matrix_function', 'matrix_element', 'vector_element')
+    @_('num_expr', 'matrix', 'matrix_function', 'matrix_element', 'vector_element', 'STRING')
     def expr(self, p):
         return p[0]
 
@@ -165,29 +164,25 @@ class MatrixParser(Parser):
     def num_expr(self, p):
         return float(p[0])
 
-    @_('STRING')
-    def expr(self, p):
-        return p[0]
-
     @_('var')
     def num_expr(self, p):
-        return p[0]
+        return p.var
 
     @_('"-" expr %prec UMINUS')
     def expr(self, p):
-        return Apply(SymbolRef(p[0]), p.expr)
+        return Apply(SymbolRef(p[0]), [p.expr])
 
     @_('expr "\'"')
     def expr(self, p):
-        return Apply(SymbolRef(p[1]), p.expr)
+        return Apply(SymbolRef(p[1]), [p.expr])
 
     @_('BREAK')
     def statement(self, p):
-        return Break
+        return Break()
 
     @_('CONTINUE')
     def statement(self, p):
-        return Continue
+        return Continue()
 
     @_('RETURN expr')
     def statement(self, p):

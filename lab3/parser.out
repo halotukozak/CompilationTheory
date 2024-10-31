@@ -11,7 +11,7 @@ Rule 7     instruction -> WHILE ( condition ) block
 Rule 8     instruction -> IF ( condition ) block ELSE block  [precedence=nonassoc, level=2]
 Rule 9     instruction -> IF ( condition ) block  [precedence=nonassoc, level=1]
 Rule 10    instruction -> statement ;
-Rule 11    block -> instructions
+Rule 11    block -> instruction
 Rule 12    block -> { instructions }
 Rule 13    range -> num_expr : num_expr
 Rule 14    condition -> expr > expr  [precedence=nonassoc, level=3]
@@ -123,8 +123,8 @@ block                : 6 7 8 8 9
 condition            : 7 8 9
 element              : 29
 expr                 : 14 14 15 15 16 16 17 17 18 18 19 19 26 29 30 46 47 54 54 55 55 56 56 57 57 65 66
-instruction          : 4 5
-instructions         : 3 4 11 12
+instruction          : 4 5 11
+instructions         : 3 4 12
 instructions_opt     : 1
 matrix               : 52
 matrix_element       : 41 50
@@ -225,16 +225,7 @@ state 4
     (45) var -> . ID
     (44) matrix_element -> . ID [ INTNUM , INTNUM ]
     (43) vector_element -> . ID [ INTNUM ]
-  ! shift/reduce conflict for FOR resolved as shift
-  ! shift/reduce conflict for WHILE resolved as shift
-  ! shift/reduce conflict for IF resolved as shift
-  ! shift/reduce conflict for PRINT resolved as shift
-  ! shift/reduce conflict for RETURN resolved as shift
-  ! shift/reduce conflict for CONTINUE resolved as shift
-  ! shift/reduce conflict for BREAK resolved as shift
-  ! shift/reduce conflict for ID resolved as shift
     $end            reduce using rule 5 (instructions -> instruction .)
-    ELSE            reduce using rule 5 (instructions -> instruction .)
     }               reduce using rule 5 (instructions -> instruction .)
     FOR             shift and go to state 5
     WHILE           shift and go to state 7
@@ -462,15 +453,6 @@ state 18
 
     (4) instructions -> instruction instructions .
     $end            reduce using rule 4 (instructions -> instruction instructions .)
-    FOR             reduce using rule 4 (instructions -> instruction instructions .)
-    WHILE           reduce using rule 4 (instructions -> instruction instructions .)
-    IF              reduce using rule 4 (instructions -> instruction instructions .)
-    PRINT           reduce using rule 4 (instructions -> instruction instructions .)
-    RETURN          reduce using rule 4 (instructions -> instruction instructions .)
-    CONTINUE        reduce using rule 4 (instructions -> instruction instructions .)
-    BREAK           reduce using rule 4 (instructions -> instruction instructions .)
-    ID              reduce using rule 4 (instructions -> instruction instructions .)
-    ELSE            reduce using rule 4 (instructions -> instruction instructions .)
     }               reduce using rule 4 (instructions -> instruction instructions .)
 
 
@@ -754,8 +736,8 @@ state 29
     BREAK           reduce using rule 10 (instruction -> statement ; .)
     ID              reduce using rule 10 (instruction -> statement ; .)
     $end            reduce using rule 10 (instruction -> statement ; .)
-    ELSE            reduce using rule 10 (instruction -> statement ; .)
     }               reduce using rule 10 (instruction -> statement ; .)
+    ELSE            reduce using rule 10 (instruction -> statement ; .)
 
 
 state 30
@@ -1665,10 +1647,8 @@ state 73
 state 74
 
     (6) instruction -> FOR var = range . block
-    (11) block -> . instructions
+    (11) block -> . instruction
     (12) block -> . { instructions }
-    (4) instructions -> . instruction instructions
-    (5) instructions -> . instruction
     (6) instruction -> . FOR var = range block
     (7) instruction -> . WHILE ( condition ) block
     (8) instruction -> . IF ( condition ) block ELSE block
@@ -1697,8 +1677,7 @@ state 74
 
     var                            shift and go to state 6
     block                          shift and go to state 101
-    instructions                   shift and go to state 102
-    instruction                    shift and go to state 4
+    instruction                    shift and go to state 102
     statement                      shift and go to state 9
     element                        shift and go to state 14
     matrix_element                 shift and go to state 15
@@ -1713,10 +1692,8 @@ state 75
 state 76
 
     (7) instruction -> WHILE ( condition ) . block
-    (11) block -> . instructions
+    (11) block -> . instruction
     (12) block -> . { instructions }
-    (4) instructions -> . instruction instructions
-    (5) instructions -> . instruction
     (6) instruction -> . FOR var = range block
     (7) instruction -> . WHILE ( condition ) block
     (8) instruction -> . IF ( condition ) block ELSE block
@@ -1744,8 +1721,7 @@ state 76
     ID              shift and go to state 17
 
     block                          shift and go to state 105
-    instructions                   shift and go to state 102
-    instruction                    shift and go to state 4
+    instruction                    shift and go to state 102
     var                            shift and go to state 6
     statement                      shift and go to state 9
     element                        shift and go to state 14
@@ -2050,10 +2026,8 @@ state 83
 
     (8) instruction -> IF ( condition ) . block ELSE block
     (9) instruction -> IF ( condition ) . block
-    (11) block -> . instructions
+    (11) block -> . instruction
     (12) block -> . { instructions }
-    (4) instructions -> . instruction instructions
-    (5) instructions -> . instruction
     (6) instruction -> . FOR var = range block
     (7) instruction -> . WHILE ( condition ) block
     (8) instruction -> . IF ( condition ) block ELSE block
@@ -2081,8 +2055,7 @@ state 83
     ID              shift and go to state 17
 
     block                          shift and go to state 112
-    instructions                   shift and go to state 102
-    instruction                    shift and go to state 4
+    instruction                    shift and go to state 102
     var                            shift and go to state 6
     statement                      shift and go to state 9
     element                        shift and go to state 14
@@ -2376,24 +2349,24 @@ state 101
     BREAK           reduce using rule 6 (instruction -> FOR var = range block .)
     ID              reduce using rule 6 (instruction -> FOR var = range block .)
     $end            reduce using rule 6 (instruction -> FOR var = range block .)
-    ELSE            reduce using rule 6 (instruction -> FOR var = range block .)
     }               reduce using rule 6 (instruction -> FOR var = range block .)
+    ELSE            reduce using rule 6 (instruction -> FOR var = range block .)
 
 
 state 102
 
-    (11) block -> instructions .
-    $end            reduce using rule 11 (block -> instructions .)
-    FOR             reduce using rule 11 (block -> instructions .)
-    WHILE           reduce using rule 11 (block -> instructions .)
-    IF              reduce using rule 11 (block -> instructions .)
-    PRINT           reduce using rule 11 (block -> instructions .)
-    RETURN          reduce using rule 11 (block -> instructions .)
-    CONTINUE        reduce using rule 11 (block -> instructions .)
-    BREAK           reduce using rule 11 (block -> instructions .)
-    ID              reduce using rule 11 (block -> instructions .)
-    ELSE            reduce using rule 11 (block -> instructions .)
-    }               reduce using rule 11 (block -> instructions .)
+    (11) block -> instruction .
+    FOR             reduce using rule 11 (block -> instruction .)
+    WHILE           reduce using rule 11 (block -> instruction .)
+    IF              reduce using rule 11 (block -> instruction .)
+    PRINT           reduce using rule 11 (block -> instruction .)
+    RETURN          reduce using rule 11 (block -> instruction .)
+    CONTINUE        reduce using rule 11 (block -> instruction .)
+    BREAK           reduce using rule 11 (block -> instruction .)
+    ID              reduce using rule 11 (block -> instruction .)
+    $end            reduce using rule 11 (block -> instruction .)
+    }               reduce using rule 11 (block -> instruction .)
+    ELSE            reduce using rule 11 (block -> instruction .)
 
 
 state 103
@@ -2460,8 +2433,8 @@ state 105
     BREAK           reduce using rule 7 (instruction -> WHILE ( condition ) block .)
     ID              reduce using rule 7 (instruction -> WHILE ( condition ) block .)
     $end            reduce using rule 7 (instruction -> WHILE ( condition ) block .)
-    ELSE            reduce using rule 7 (instruction -> WHILE ( condition ) block .)
     }               reduce using rule 7 (instruction -> WHILE ( condition ) block .)
+    ELSE            reduce using rule 7 (instruction -> WHILE ( condition ) block .)
 
 
 state 106
@@ -2645,10 +2618,8 @@ state 119
 state 120
 
     (8) instruction -> IF ( condition ) block ELSE . block
-    (11) block -> . instructions
+    (11) block -> . instruction
     (12) block -> . { instructions }
-    (4) instructions -> . instruction instructions
-    (5) instructions -> . instruction
     (6) instruction -> . FOR var = range block
     (7) instruction -> . WHILE ( condition ) block
     (8) instruction -> . IF ( condition ) block ELSE block
@@ -2676,8 +2647,7 @@ state 120
     ID              shift and go to state 17
 
     block                          shift and go to state 124
-    instructions                   shift and go to state 102
-    instruction                    shift and go to state 4
+    instruction                    shift and go to state 102
     var                            shift and go to state 6
     statement                      shift and go to state 9
     element                        shift and go to state 14
@@ -2718,7 +2688,6 @@ state 122
 state 123
 
     (12) block -> { instructions } .
-    $end            reduce using rule 12 (block -> { instructions } .)
     FOR             reduce using rule 12 (block -> { instructions } .)
     WHILE           reduce using rule 12 (block -> { instructions } .)
     IF              reduce using rule 12 (block -> { instructions } .)
@@ -2727,8 +2696,9 @@ state 123
     CONTINUE        reduce using rule 12 (block -> { instructions } .)
     BREAK           reduce using rule 12 (block -> { instructions } .)
     ID              reduce using rule 12 (block -> { instructions } .)
-    ELSE            reduce using rule 12 (block -> { instructions } .)
+    $end            reduce using rule 12 (block -> { instructions } .)
     }               reduce using rule 12 (block -> { instructions } .)
+    ELSE            reduce using rule 12 (block -> { instructions } .)
 
 
 state 124
@@ -2743,17 +2713,5 @@ state 124
     BREAK           reduce using rule 8 (instruction -> IF ( condition ) block ELSE block .)
     ID              reduce using rule 8 (instruction -> IF ( condition ) block ELSE block .)
     $end            reduce using rule 8 (instruction -> IF ( condition ) block ELSE block .)
-    ELSE            reduce using rule 8 (instruction -> IF ( condition ) block ELSE block .)
     }               reduce using rule 8 (instruction -> IF ( condition ) block ELSE block .)
-
-
-Conflicts:
-
-shift/reduce conflict for FOR in state 4 resolved as shift
-shift/reduce conflict for WHILE in state 4 resolved as shift
-shift/reduce conflict for IF in state 4 resolved as shift
-shift/reduce conflict for PRINT in state 4 resolved as shift
-shift/reduce conflict for RETURN in state 4 resolved as shift
-shift/reduce conflict for CONTINUE in state 4 resolved as shift
-shift/reduce conflict for BREAK in state 4 resolved as shift
-shift/reduce conflict for ID in state 4 resolved as shift
+    ELSE            reduce using rule 8 (instruction -> IF ( condition ) block ELSE block .)
