@@ -1,9 +1,6 @@
 from dataclasses import dataclass
 
-
 # +- Tree -+- Statement -+
-#                        +- Fun
-#                        |
 #                        +- Expr --------+
 #                        |               +- Apply
 #                        |               +- Number
@@ -29,11 +26,6 @@ class Tree:
 class Statement(Tree):
     def printTree(self):
         print(self)
-
-
-@dataclass
-class Fun(Statement):
-    name: str
 
 
 class Expr[T](Statement):
