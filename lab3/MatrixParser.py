@@ -4,6 +4,7 @@ from sly import Parser
 
 from lab1.MatrixScanner import MatrixScanner
 from lab3.AST import *
+from lab3.TreePrinter import TreePrinter
 
 
 class MatrixParser(Parser):
@@ -220,5 +221,5 @@ if __name__ == '__main__':
     parser = MatrixParser()
 
     result = parser.parse(lexer.tokenize(text))
-    for r in result:
-        r.printTree()
+    treePrinter = TreePrinter()
+    treePrinter.printResult(result)

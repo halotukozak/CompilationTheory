@@ -24,9 +24,7 @@ class Tree:
 
 
 class Statement(Tree):
-    def printTree(self):
-        print(self)
-
+    pass
 
 class Expr[T](Statement):
     pass
