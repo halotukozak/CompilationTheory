@@ -1,5 +1,7 @@
 from sly import Lexer
 
+from lab4.Utils import report_error
+
 
 # noinspection PyUnresolvedReferences,PyUnboundLocalVariable
 class MatrixScanner(Lexer):
@@ -69,5 +71,5 @@ class MatrixScanner(Lexer):
         self.lineno += len(t.value)
 
     def error(self, t):
-        print('Line %d: Bad character %r' % (self.lineno, t.value[0]))
+        report_error(self, f"Illegal character '{t.value[0]}'", self.lineno)
         self.index += 1

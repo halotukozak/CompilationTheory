@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+from typing import TypeVar
 
+from lab4.TypeSystem import Type
 
 # +- Tree -+- Statement -+- Def ---------+
 #                        |               +- FunDef
@@ -10,8 +12,6 @@ from dataclasses import dataclass
 #                        |               +- Number
 #                        |               +- String
 #                        |               +- Range
-#                        |               +- Vector
-#                        |               +- Matrix
 #                        |               +- Ref --------+- VectorRef
 #                        |                              +- MatrixRef
 #                        |                              +- SymbolRef
@@ -22,6 +22,9 @@ from dataclasses import dataclass
 #                        +- Return
 #                        +- Continue
 #                        +- Break
+
+T = TypeVar('T', bound='Type')
+
 
 class Tree:
     lineno: int
@@ -68,18 +71,6 @@ class Literal[T](Expr[T]):
         return Literal(str(value), lineno)
 
 
-@dataclass
-class Vector(Expr):
-    elements: list[Literal[int] | Literal[float]]
-    lineno: int
-
-
-@dataclass
-class Matrix(Expr):
-    vectors: list[Vector]
-    lineno: int
-
-
 class Ref[T](Expr[T]):
     pass
 
@@ -91,15 +82,15 @@ class SymbolRef[T](Ref[T]):
 
 
 @dataclass
-class VectorRef(Ref[Vector]):
-    vector: SymbolRef[Vector]
+class VectorRef(Ref[Type.Vector]):
+    vector: SymbolRef[Type.Vector]
     element: Literal[int]
     lineno: int
 
 
 @dataclass
-class MatrixRef(Ref[Matrix]):
-    matrix: SymbolRef[Matrix]
+class MatrixRef(Ref[Type.Matrix]):
+    matrix: SymbolRef[Type.Matrix]
     row: Literal[int]
     col: Literal[int]
     lineno: int
@@ -114,17 +105,24 @@ class Apply[T](Expr[T]):
 
 @dataclass
 class Range(Expr):
-    start: Literal[int]
-    end: Literal[int]
+    start: Expr[int]
+    end: Expr[int]
     lineno: int
 
 
-@dataclass
 class Assign(Statement):  # [T]?
     var: Ref
-    op: str
     expr: Expr
     lineno: int
+
+    def __init__(self, var: Ref, op: str, expr: Expr, lineno: int):
+        super().__init__(lineno)
+        self.var = var
+        match op:
+            case "=":
+                self.expr = expr
+            case _:
+                self.expr = Apply(SymbolRef(op[:-1], lineno), [var, expr], lineno)
 
 
 @dataclass
