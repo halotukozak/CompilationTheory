@@ -34,8 +34,6 @@ if __name__ == '__main__':
 
     scoper = MatrixScoper()
     scoper.visit_all(result)
-    quit_if_failed(scoper)
 
     type_checker = MatrixTypeChecker()
     type_checker.visit_all(result)
-    quit_if_failed(type_checker)

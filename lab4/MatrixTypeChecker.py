@@ -70,8 +70,10 @@ class MatrixTypeChecker:
                 for arg, expected_type in zip(apply.args, ref_type.args):
                     if arg.type != expected_type:
                         report_error(self, f"Expected {expected_type}, got {arg.type}", apply.lineno)
-        elif isinstance(ref_type, TS.undef):
+        elif isinstance(apply, TS.undef):
             report_error(self, f"Undefined function {apply.ref.name}", apply.lineno)
+        elif isinstance(apply.type, TS.undef):
+            pass  # error already reported
         else:
             raise NotImplementedError
 

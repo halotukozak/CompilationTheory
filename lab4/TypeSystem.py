@@ -1,7 +1,6 @@
 import builtins
+from dataclasses import dataclass
 from typing import Tuple, Optional
-
-from attr import dataclass
 
 
 class Type:
@@ -34,7 +33,7 @@ class Type:
             return Or(self, other)
 
     def __hash__(self):
-        return hash(str(self))
+        return hash(repr(self))
 
 
 class undef(Type):
@@ -73,8 +72,11 @@ class VarArg(Type):
     def __repr__(self):
         return f"({self.type})*"
 
+    def __hash__(self):
+        return hash(repr(self))
 
-@dataclass(init=False)
+
+@dataclass(init=False, unsafe_hash=True)
 class Function(Type):
     args: None | Type | Tuple[Type, ...] | VarArg
     arity: Optional[int]

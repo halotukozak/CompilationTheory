@@ -132,8 +132,10 @@ class MatrixScoper:
             )
             if isinstance(res, TS.undef):
                 report_error(self, f"Function {apply.ref.name} with arguments {arg_types} not found", apply.lineno)
+                apply.ref.type = TS.undef()
                 apply.type = TS.undef()
             else:
+                apply.ref.type = res
                 apply.type = res.result
         elif isinstance(apply.ref.type, TS.Function):
             apply.type = apply.ref.type.result

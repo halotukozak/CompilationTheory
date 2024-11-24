@@ -81,3 +81,7 @@ var_args = prepare({
 })
 
 symbols = {**unary, **binary, **var_args}
+
+
+def get_symbol(name: str) -> SymbolRef:
+    return symbols[name].copy()

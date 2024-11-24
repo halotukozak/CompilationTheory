@@ -94,7 +94,7 @@ class MatrixParser(Parser):
     @_('expr comparator expr')
     def condition(self, p: YaccProduction):
         args = [p.expr0, p.expr1]
-        return AST.Apply(Predef.get(p.comparator, args), args, p.lineno)
+        return AST.Apply(Predef.get_symbol(p.comparator), args, p.lineno)
 
     @_('MULASSIGN', 'DIVASSIGN', 'SUBASSIGN', 'ADDASSIGN', '"="')
     def assign_op(self, p: YaccProduction):
@@ -107,7 +107,7 @@ class MatrixParser(Parser):
                 expr = p.expr
             case _:
                 args = [p.element, p.expr]
-                expr = AST.Apply(Predef[p.assign_op[:-1]], args, p.lineno)
+                expr = AST.Apply(Predef.get_symbol(p.assign_op[:-1]), args, p.lineno)
         return AST.Assign(p.element, expr, p.lineno)
 
     @_('ID assign_op expr')
@@ -117,13 +117,13 @@ class MatrixParser(Parser):
             case "=":
                 expr = p.expr
             case _:
-                expr = AST.Apply(Predef.symbols[p.assign_op[:-1]], [var, p.expr], p.lineno)
+                expr = AST.Apply(Predef.get_symbol(p.assign_op[:-1]), [var, p.expr], p.lineno)
         var.type = expr.type
         return AST.Assign(var, expr, p.lineno)
 
     @_('function_name "(" var_args ")"')
     def expr(self, p: YaccProduction):
-        return AST.Apply(Predef.symbols[p.function_name], p.var_args, p.lineno)
+        return AST.Apply(Predef.get_symbol(p.function_name), p.var_args, p.lineno)
 
     @_('EYE', 'ONES', 'ZEROS')
     def function_name(self, p: YaccProduction):
@@ -131,7 +131,7 @@ class MatrixParser(Parser):
 
     @_('"[" var_args "]"')
     def matrix(self, p: YaccProduction):
-        return AST.Apply(Predef.symbols["INIT"], p.var_args, p.lineno)
+        return AST.Apply(Predef.get_symbol("INIT"), p.var_args, p.lineno)
 
     @_('var "[" var_args "]"')
     def element(self, p: YaccProduction):
@@ -157,7 +157,7 @@ class MatrixParser(Parser):
        'expr DOTMUL expr',
        'expr DOTDIV expr')
     def expr(self, p: YaccProduction):
-        return AST.Apply(Predef.symbols[p[1]], [p.expr0, p.expr1], p.lineno)
+        return AST.Apply(Predef.get_symbol(p[1]), [p.expr0, p.expr1], p.lineno)
 
     @_('var', 'matrix', 'element')
     def expr(self, p: YaccProduction):
@@ -178,12 +178,12 @@ class MatrixParser(Parser):
     @_('"-" expr %prec UMINUS')
     def expr(self, p: YaccProduction):
         args = [p.expr]
-        return AST.Apply(Predef.symbols["UMINUS"], args, p.lineno)
+        return AST.Apply(Predef.get_symbol("UMINUS"), args, p.lineno)
 
     @_('expr "\'"')
     def expr(self, p: YaccProduction):
         args = [p.expr]
-        return AST.Apply(Predef.symbols["'"], args, p.lineno)
+        return AST.Apply(Predef.get_symbol("'"), args, p.lineno)
 
     @_('BREAK')
     def statement(self, p: YaccProduction):
@@ -200,7 +200,7 @@ class MatrixParser(Parser):
     @_('PRINT var_args')
     def statement(self, p: YaccProduction):
         args = p.var_args
-        return AST.Apply(Predef.get("PRINT", args), args, p.lineno)
+        return AST.Apply(Predef.get_symbol("PRINT"), args, p.lineno)
 
     @_('var_args "," expr')
     def var_args(self, p: YaccProduction):

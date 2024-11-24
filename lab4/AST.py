@@ -80,6 +80,9 @@ class SymbolRef[T](Ref[T]):
     lineno: Optional[int]
     type: T
 
+    def copy(self):
+        return SymbolRef(self.name, self.lineno, self.type)
+
 
 @dataclass
 class VectorRef(Ref[TS.Vector]):
