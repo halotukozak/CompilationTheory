@@ -19,22 +19,34 @@ class MatrixTypeChecker:
             self.visit(node)
 
     def visit_If(self, if_: If):
-        raise NotImplementedError
+        self.visit(if_.condition)
+        if not isinstance(if_.condition.type, TS.Bool):
+            report_error(self, f"Expected Bool, got {if_.condition.type}", if_.condition.lineno)
+        self.visit_all(if_.then)
+        if if_.else_:
+            self.visit_all(if_.else_)
 
     def visit_While(self, while_: While):
-        raise NotImplementedError
+        self.visit(while_.condition)
+        if not isinstance(while_.condition.type, TS.Bool):
+            report_error(self, f"Expected Bool, got {while_.condition.type}", while_.condition.lineno)
+        self.visit_all(while_.body)
 
     def visit_For(self, for_: For):
-        raise NotImplementedError
+        self.visit(for_.range)
+        self.visit(for_.var)
+        if not isinstance(for_.var.type, TS.Int):
+            report_error(self, f"Expected Int, got {for_.var.type}", for_.var.lineno)
+        self.visit_all(for_.body)
 
     def visit_Break(self, break_: Break):
-        raise NotImplementedError
+        pass
 
     def visit_Continue(self, continue_: Continue):
-        raise NotImplementedError
+        pass
 
     def visit_SymbolRef(self, ref: SymbolRef):
-        raise NotImplementedError
+        pass
 
     def visit_MatrixRef(self, ref: MatrixRef):
         if not isinstance(ref.matrix.type, TS.Matrix):
@@ -78,10 +90,15 @@ class MatrixTypeChecker:
             raise NotImplementedError
 
     def visit_Range(self, range_: Range):
-        raise NotImplementedError
+        self.visit(range_.start)
+        self.visit(range_.end)
+        if not isinstance(range_.start.type, TS.Int):
+            report_error(self, f"Expected Int, got {range_.start.type}", range_.start.lineno)
+        if not isinstance(range_.end.type, TS.Int):
+            report_error(self, f"Expected Int, got {range_.end.type}", range_.end.lineno)
 
     def visit_Literal(self, literal: Literal):
         pass
 
     def visit_Return(self, return_: Return):
-        raise NotImplementedError
+        pass

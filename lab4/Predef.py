@@ -77,7 +77,7 @@ binary = prepare({
 var_args = prepare({
     "INIT": TS.Function(VarArg(ts_float | ts_int), ts_vector) |
             TS.Function(VarArg(ts_vector), ts_matrix),
-    "PRINT": TS.Function(VarArg(ts_undef), ts_undef),
+    "PRINT": TS.Function(VarArg(TS.Any()), ts_undef),
 })
 
 symbols = {**unary, **binary, **var_args}

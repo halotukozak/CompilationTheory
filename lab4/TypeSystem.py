@@ -5,7 +5,9 @@ from typing import Tuple, Optional
 
 class Type:
     def __eq__(self, other) -> bool:
-        if isinstance(other, AnyOf) and isinstance(self, AnyOf):
+        if isinstance(other, Any) or isinstance(self, Any):
+            return True
+        elif isinstance(other, AnyOf) and isinstance(self, AnyOf):
             return set(self.all).intersection(other.all) != set()
         elif isinstance(self, AnyOf):
             return other in self
@@ -21,7 +23,9 @@ class Type:
         return type(self).__name__
 
     def __or__(self, other):
-        if isinstance(other, AnyOf) and isinstance(self, AnyOf):
+        if isinstance(other, Any) or isinstance(self, Any):
+            return Any()
+        elif isinstance(other, AnyOf) and isinstance(self, AnyOf):
             return AnyOf(*self.all, *other.all)
         elif isinstance(self, AnyOf):
             return AnyOf(*self.all, other)
@@ -37,6 +41,10 @@ class Type:
 
 
 class undef(Type):
+    pass
+
+
+class Any(Type):
     pass
 
 

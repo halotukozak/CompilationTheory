@@ -1,7 +1,7 @@
 from lab4 import Predef
 from lab4.AST import *
 from lab4.TypeSystem import AnyOf
-from lab4.Utils import report_error
+from lab4.Utils import report_error, report_warn
 
 
 class MatrixScoper:
@@ -40,7 +40,7 @@ class MatrixScoper:
 
         def add_to_current_scope(self, symbol: SymbolRef) -> None:
             if symbol in self.actual_scope:
-                report_error(self, f"Variable {symbol.name} already defined", symbol.lineno)
+                report_warn(self, f"Variable {symbol.name} already defined.", symbol.lineno)
             self.actual_scope.put(symbol.name, symbol)
 
         def push_scope(self, name, in_loop: Optional[bool] = None):
@@ -144,6 +144,8 @@ class MatrixScoper:
 
     def visit_Range(self, range_: Range):
         self.visit(range_.start)
+        if isinstance(range_.start, SymbolRef) and range_.start.type != TS.Int():
+            range_.start.type = TS.Int()
         self.visit(range_.end)
 
     def visit_Literal(self, literal: Literal):

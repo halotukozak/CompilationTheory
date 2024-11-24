@@ -6,7 +6,7 @@ from lab4.MatrixScoper import MatrixScoper
 from lab4.MatrixTypeChecker import MatrixTypeChecker
 
 if __name__ == '__main__':
-    name = "examples/opers_without_syntax_errors.m"
+    name = "examples/test.m"
     filename = sys.argv[1] if len(sys.argv) > 1 else name
     try:
         file = open(filename, "r")
@@ -28,7 +28,6 @@ if __name__ == '__main__':
     parser = MatrixParser()
     result = parser.parse(tokens)
     quit_if_failed(parser)
-    print(result)
     # treePrinter = TreePrinter()
     # treePrinter.print_result(result)
 
