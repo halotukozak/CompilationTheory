@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import TypeVar
+from typing import TypeVar, Any, Optional
 
-from lab4.TypeSystem import Type
+from lab4 import TypeSystem as TS
 
 # +- Tree -+- Statement -+- Def ---------+
 #                        |               +- FunDef
@@ -29,9 +29,6 @@ T = TypeVar('T', bound='Type')
 class Tree:
     lineno: int
 
-    def __init__(self, lineno: int):
-        self.lineno = lineno
-
 
 class Statement(Tree):
     pass
@@ -50,27 +47,29 @@ class VarDef(Def):
 
 
 class Expr[T](Statement):
-    pass
+    type: T
 
 
 @dataclass
 class Literal[T](Expr[T]):
-    value: T
+    value: Any
     lineno: int
+    type: T
 
     @staticmethod
     def int(value, lineno: int):
-        return Literal(int(value), lineno)
+        return Literal(int(value), lineno, TS.Int())
 
     @staticmethod
     def float(value: float, lineno: int):
-        return Literal(float(value), lineno)
+        return Literal(float(value), lineno, TS.Float())
 
     @staticmethod
     def string(value, lineno: int):
-        return Literal(str(value), lineno)
+        return Literal(str(value), lineno, TS.String())
 
 
+@dataclass(init=False)
 class Ref[T](Expr[T]):
     pass
 
@@ -78,56 +77,55 @@ class Ref[T](Expr[T]):
 @dataclass
 class SymbolRef[T](Ref[T]):
     name: str
+    lineno: Optional[int]
+    type: T
+
+
+@dataclass
+class VectorRef(Ref[TS.Vector]):
+    vector: SymbolRef[TS.Vector]
+    element: Literal[TS.Int]
     lineno: int
 
 
 @dataclass
-class VectorRef(Ref[Type.Vector]):
-    vector: SymbolRef[Type.Vector]
-    element: Literal[int]
+class MatrixRef(Ref[TS.Matrix]):
+    matrix: SymbolRef[TS.Matrix]
+    row: Literal[TS.Int]
+    col: Literal[TS.Int]
     lineno: int
 
 
-@dataclass
-class MatrixRef(Ref[Type.Matrix]):
-    matrix: SymbolRef[Type.Matrix]
-    row: Literal[int]
-    col: Literal[int]
-    lineno: int
-
-
-@dataclass
+@dataclass(init=False)
 class Apply[T](Expr[T]):
     fun: Ref[T]
     args: list[Expr]
     lineno: int
 
+    def __init__(self, fun: Ref[T], args: list[Expr], lineno: int):
+        self.fun = fun
+        self.args = args
+        self.type = fun.type  # todo: result
+        self.lineno = lineno
+
 
 @dataclass
 class Range(Expr):
-    start: Expr[int]
-    end: Expr[int]
+    start: Expr[TS.Int]
+    end: Expr[TS.Int]
     lineno: int
 
 
-class Assign(Statement):  # [T]?
+@dataclass
+class Assign(Statement):
     var: Ref
     expr: Expr
     lineno: int
 
-    def __init__(self, var: Ref, op: str, expr: Expr, lineno: int):
-        super().__init__(lineno)
-        self.var = var
-        match op:
-            case "=":
-                self.expr = expr
-            case _:
-                self.expr = Apply(SymbolRef(op[:-1], lineno), [var, expr], lineno)
-
 
 @dataclass
 class If(Statement):
-    condition: Expr[bool]
+    condition: Expr[TS.Bool]
     then: list[Statement]
     else_: list[Statement] | None
     lineno: int
@@ -135,7 +133,7 @@ class If(Statement):
 
 @dataclass
 class While(Statement):
-    condition: Expr[bool]
+    condition: Expr[TS.Bool]
     body: list[Statement]
     lineno: int
 

@@ -3,9 +3,10 @@ import sys
 from lab4.MatrixParser import MatrixParser
 from lab4.MatrixScanner import MatrixScanner
 from lab4.MatrixScoper import MatrixScoper
+from lab4.TypeChecker import MatrixTypeChecker
 
 if __name__ == '__main__':
-    name = "examples/test.m"
+    name = "examples/init.m"
     filename = sys.argv[1] if len(sys.argv) > 1 else name
     try:
         file = open(filename, "r")
@@ -27,10 +28,14 @@ if __name__ == '__main__':
     parser = MatrixParser()
     result = parser.parse(tokens)
     quit_if_failed(parser)
-    # print(result)
+    print(result)
     # treePrinter = TreePrinter()
-    # treePrinter.printResult(result)
+    # treePrinter.print_result(result)
 
     scoper = MatrixScoper()
     scoper.visit_all(result)
     quit_if_failed(scoper)
+
+    type_checker = MatrixTypeChecker()
+    type_checker.visit_all(result)
+    quit_if_failed(type_checker)

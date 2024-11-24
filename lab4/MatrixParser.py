@@ -1,8 +1,9 @@
 from sly import Parser
 from sly.yacc import YaccProduction
 
-from lab4.AST import *
-from lab4.MatrixScanner import MatrixScanner
+from lab4 import AST
+from lab4 import Predef
+from lab4 import TypeSystem as TS
 from lab4.Utils import report_error
 
 
@@ -66,66 +67,86 @@ class MatrixParser(Parser):
 
     @_('IF "(" condition ")" block %prec IFX')
     def instruction(self, p: YaccProduction):
-        return If(p.condition, p.block, None, p.lineno)
+        return AST.If(p.condition, p.block, None, p.lineno)
 
     @_('IF "(" condition ")" block ELSE block')
     def instruction(self, p: YaccProduction):
-        return If(p.condition, p.block0, p.block1, p.lineno)
+        return AST.If(p.condition, p.block0, p.block1, p.lineno)
 
     @_('WHILE "(" condition ")" block')
     def instruction(self, p: YaccProduction):
-        return While(p.condition, p.block, p.lineno)
+        return AST.While(p.condition, p.block, p.lineno)
 
-    @_('FOR var "=" range block')
+    @_('FOR ID "=" range block')
     def instruction(self, p: YaccProduction):
-        return For(p.var, p.range, p.block, p.lineno)
+        var = AST.SymbolRef(p.ID, p.lineno, TS.Int)
+        return AST.For(var, p.range, p.block, p.lineno)
 
     @_('expr ":" expr')
     def range(self, p: YaccProduction):
-        return Range(p.expr0, p.expr1, p.lineno)
+        return AST.Range(p.expr0, p.expr1, p.lineno)
 
-    @_('EQUAL', 'NOT_EQUAL', 'LESS_EQUAL', 'GREATER_EQUAL', '">"', '"<"', )
+    @_('EQUAL', 'NOT_EQUAL', 'LESS_EQUAL', 'GREATER_EQUAL', '">"', '"<"')
     def comparator(self, p: YaccProduction):
         return p[0]
 
     @_('expr comparator expr')
     def condition(self, p: YaccProduction):
-        return Apply(SymbolRef(p.comparator, p.lineno), [p.expr0, p.expr1], p.lineno)
+        args = [p.expr0, p.expr1]
+        return AST.Apply(Predef.get(p.comparator, args), args, p.lineno)
 
     @_('MULASSIGN', 'DIVASSIGN', 'SUBASSIGN', 'ADDASSIGN', '"="')
     def assign_op(self, p: YaccProduction):
         return p[0]
 
-    @_('element assign_op expr',
-       'var assign_op expr')
+    @_('element assign_op expr')
     def statement(self, p: YaccProduction):
-        return Assign(p[0], p.assign_op, p.expr, p.lineno)
+        match p.assign_op:
+            case "=":
+                expr = p.expr
+            case _:
+                args = [p.element, p.expr]
+                expr = Apply(Predef.get(p.assign_op[:-1], args), args, p.lineno)
+        return AST.Assign(p.element, expr, p.lineno)
+
+    @_('ID assign_op expr')
+    def statement(self, p: YaccProduction):
+        match p.assign_op:
+            case "=":
+                expr = p.expr
+            case _:
+                args = [p.element, p.expr]
+                expr = AST.Apply(Predef.get(p.assign_op[:-1], args), args, p.lineno)
+        var = AST.SymbolRef(p.ID, p.lineno, expr.type)
+        return AST.Assign(var, expr, p.lineno)
 
     @_('function_name "(" var_args ")"')
     def expr(self, p: YaccProduction):
-        return Apply(p.function_name, p.var_args, p.lineno)
+        args = p.var_args
+        return AST.Apply(Predef.get(p.function_name, args), args, p.lineno)
 
-    @_('EYE', 'ONES', 'ZEROS', 'ID')
+    @_('EYE', 'ONES', 'ZEROS')
     def function_name(self, p: YaccProduction):
-        return SymbolRef(p[0], p.lineno)
+        return p[0]
 
     @_('"[" var_args "]"')
     def matrix(self, p: YaccProduction):
-        return Apply(SymbolRef("init_matrix_or_vector", p.lineno), p.var_args, p.lineno)
+        args = p.var_args
+        return AST.Apply(Predef.get("INIT", args), args, p.lineno)
 
     @_('var "[" var_args "]"')
     def element(self, p: YaccProduction):
         match len(p.var_args):
             case 1:
-                return VectorRef(p.var, p.var_args[0], p.lineno)
+                return AST.VectorRef(p.var, p.var_args[0], p.lineno)
             case 2:
-                return MatrixRef(p.var, p.var_args[0], p.var_args[1], p.lineno)
+                return AST.MatrixRef(p.var, p.var_args[0], p.var_args[1], p.lineno)
             case _:
                 report_error(self, "Invalid matrix element reference", p.lineno)
 
     @_('ID')
     def var(self, p: YaccProduction):
-        return SymbolRef(p[0], p.lineno)
+        return AST.SymbolRef(p[0], p.lineno, TS.undef)
 
     @_('expr "+" expr',
        'expr "-" expr',
@@ -136,7 +157,8 @@ class MatrixParser(Parser):
        'expr DOTMUL expr',
        'expr DOTDIV expr')
     def expr(self, p: YaccProduction):
-        return Apply(SymbolRef(p[1], p.lineno), [p.expr0, p.expr1], p.lineno)
+        args = [p.expr0, p.expr1]
+        return AST.Apply(Predef.get(p[1], args), args, p.lineno)
 
     @_('var', 'matrix', 'element')
     def expr(self, p: YaccProduction):
@@ -144,39 +166,42 @@ class MatrixParser(Parser):
 
     @_('INTNUM')
     def expr(self, p: YaccProduction):
-        return Literal.int(p[0], p.lineno)
+        return AST.Literal.int(p[0], p.lineno)
 
     @_('FLOAT')
     def expr(self, p: YaccProduction):
-        return Literal.float(p[0], p.lineno)
+        return AST.Literal.float(p[0], p.lineno)
 
     @_('STRING')
     def expr(self, p: YaccProduction):
-        return Literal.string(p[0], p.lineno)
+        return AST.Literal.string(p[0], p.lineno)
 
     @_('"-" expr %prec UMINUS')
     def expr(self, p: YaccProduction):
-        return Apply(SymbolRef(p[0], p.lineno), [p.expr], p.lineno)
+        args = [p.expr]
+        return AST.Apply(Predef.get("-", args), args, p.lineno)
 
     @_('expr "\'"')
     def expr(self, p: YaccProduction):
-        return Apply(SymbolRef(p[1], p.lineno), [p.expr], p.lineno)
+        args = [p.expr]
+        return AST.Apply(Predef.get("'", args), args, p.lineno)
 
     @_('BREAK')
     def statement(self, p: YaccProduction):
-        return Break(p.lineno)
+        return AST.Break(p.lineno)
 
     @_('CONTINUE')
     def statement(self, p: YaccProduction):
-        return Continue(p.lineno)
+        return AST.Continue(p.lineno)
 
     @_('RETURN expr')
     def statement(self, p: YaccProduction):
-        return Return(p.expr, p.lineno)
+        return AST.Return(p.expr, p.lineno)
 
     @_('PRINT var_args')
     def statement(self, p: YaccProduction):
-        return Apply(SymbolRef(p[0], p.lineno), p.var_args, p.lineno)
+        args = p.var_args
+        return AST.Apply(Predef.get("PRINT", args), args, p.lineno)
 
     @_('var_args "," expr')
     def var_args(self, p: YaccProduction):
