@@ -1,3 +1,5 @@
+from typing import Callable, Any
+
 from lab4 import TypeSystem as TS
 from lab4.AST import SymbolRef
 from lab4.TypeSystem import VarArg, Type
@@ -80,8 +82,25 @@ var_args = prepare({
     "PRINT": TS.Function(VarArg(TS.Any()), ts_undef),
 })
 
-symbols = {**unary, **binary, **var_args}
+callables = {
+    "INIT_VECTOR": lambda *arity: SymbolRef(
+        "INIT_VECTOR",
+        None,
+        TS.Function(VarArg(ts_float | ts_int), TS.Vector(arity[0]))
+    ),
+    "INIT_MATRIX": lambda *arity: SymbolRef(
+        "INIT_MATRIX",
+        None,
+        TS.Function(VarArg(TS.Vector(arity[1])), TS.Matrix(arity))
+    ),
+}
+
+symbols = {**unary, **binary, **var_args, **callables}
 
 
-def get_symbol(name: str) -> SymbolRef:
-    return symbols[name].copy()
+def get_symbol(name: str) -> SymbolRef | Callable[[Any], SymbolRef]:
+    res = symbols[name]
+    if isinstance(res, SymbolRef):
+        return res.copy()
+    else:
+        return res

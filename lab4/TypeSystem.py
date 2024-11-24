@@ -1,4 +1,3 @@
-import builtins
 from dataclasses import dataclass
 from typing import Tuple, Optional
 
@@ -72,8 +71,34 @@ class Or(AnyOf):
 class Vector(Type):
     arity: Optional[int] = None
 
+    def __init__(self, arity: Optional[int] = None):
+        self.arity = arity
+
+    def __str__(self):
+        if self.arity:
+            return f"Vector[{self.arity}]"
+        else:
+            return f"Vector[?]"
+
+    def __repr__(self):
+        return self.__str__()
+
+
 class Matrix(Type):
     arity: Optional[Tuple[int, int]] = None
+
+    def __init__(self, arity: Optional[Tuple[int, int]] = None):
+        self.arity = arity
+
+    def __str__(self):
+        if self.arity:
+            return f"Matrix{list(self.arity)}"
+        else:
+            return f"Matrix[?]"
+
+    def __repr__(self):
+        return self.__str__()
+
 
 @dataclass(repr=False)
 class VarArg(Type):
@@ -105,10 +130,7 @@ class Function(Type):
         self.result = result
 
     def __str__(self):
-        if isinstance(self.args, builtins.type):
-            return f"({self.args.original}) -> {self.result}"
-        else:
-            return f"({self.args}) -> {self.result}"
+        return f"({self.args}) -> {self.result}"
 
     def takes(self, args: list[Type]) -> bool:
         if self.args is None:

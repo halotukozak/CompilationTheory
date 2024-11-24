@@ -8,7 +8,7 @@ from lab4.MatrixTypeInterferer import MatrixTypeInterferer
 from lab4.SymbolTable import SymbolTable
 
 if __name__ == '__main__':
-    name = "examples/test.m"
+    name = "examples/init.m"
     filename = sys.argv[1] if len(sys.argv) > 1 else name
     try:
         file = open(filename, "r")

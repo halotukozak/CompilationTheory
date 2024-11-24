@@ -1,3 +1,4 @@
+from lab4 import Predef
 from lab4.AST import *
 from lab4.SymbolTable import SymbolTable
 from lab4.TypeSystem import AnyOf
@@ -82,10 +83,26 @@ class MatrixTypeInterferer:
 
     def visit_Apply(self, apply: Apply):
         self.visit(apply.ref)
-        for arg in apply.args:
-            self.visit(arg)
+        self.visit_all(apply.args)
         arg_types = [arg.type for arg in apply.args]
-        if isinstance(apply.ref.type, AnyOf):
+        if apply.ref == Predef.get_symbol("INIT"):  # or compare name
+            if all(isinstance(arg, Literal) for arg in apply.args):
+                vector_symbol = Predef.get_symbol("INIT_VECTOR")(len(apply.args))
+                apply.ref = vector_symbol
+                apply.type = vector_symbol.type.result
+            elif all(isinstance(arg.type, TS.Vector) for arg in apply.args):
+                arities = [arg.type.arity for arg in apply.args]
+                if all(arity == arities[0] for arity in arities):  # all arities are the same
+                    matrix_symbol = Predef.get_symbol("INIT_MATRIX")(arities[0], len(apply.args))
+                    apply.ref = matrix_symbol
+                    apply.type = matrix_symbol.type.result
+                else:
+                    report_error(self, f"Vector arities {arities} are not the same", apply.lineno)
+                    apply.ref = Predef.get_symbol("INIT_MATRIX")(None, len(apply.args))
+                    apply.type = TS.Matrix()
+            else:
+                raise NotImplementedError
+        elif isinstance(apply.ref.type, AnyOf):
             res = next(
                 (type_ for type_ in apply.ref.type.all if isinstance(type_, TS.Function) and type_.takes(arg_types)),
                 TS.undef()

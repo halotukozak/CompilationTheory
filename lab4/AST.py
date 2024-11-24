@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import TypeVar, Any, Optional
+from typing import Any, Optional
 
 from lab4 import TypeSystem as TS
+
 
 # +- Tree -+- Statement -+- Def ---------+
 #          +- Block      |               +- FunDef
@@ -22,8 +23,6 @@ from lab4 import TypeSystem as TS
 #                        +- Return
 #                        +- Continue
 #                        +- Break
-
-T = TypeVar('T', bound='Type')
 
 
 class Tree:
@@ -52,15 +51,15 @@ class VarDef(Def):
     pass
 
 
-class Expr[T](Statement):
-    type: TS.Type = T
+class Expr(Statement):
+    type: TS.Type = TS.undef()
 
 
 @dataclass
-class Literal[T](Expr[T]):
+class Literal(Expr):
     value: Any
     lineno: int
-    type: T
+    type: TS.Type
 
     @staticmethod
     def int(value, lineno: int):
@@ -76,44 +75,44 @@ class Literal[T](Expr[T]):
 
 
 @dataclass(init=False)
-class Ref[T](Expr[T]):
+class Ref(Expr):
     pass
 
 
 @dataclass
-class SymbolRef[T](Ref[T]):
+class SymbolRef(Ref):
     name: str
     lineno: Optional[int]
-    type: T
+    type: TS.Type = TS.undef()
 
     def copy(self):
         return SymbolRef(self.name, self.lineno, self.type)
 
 
 @dataclass
-class VectorRef(Ref[TS.Vector]):
-    vector: SymbolRef[TS.Vector]
-    element: Literal[TS.Int]
+class VectorRef(Ref):
+    vector: SymbolRef
+    element: Literal
     lineno: int
     type = TS.Int() | TS.Float()
 
 
 @dataclass
-class MatrixRef(Ref[TS.Matrix]):
-    matrix: SymbolRef[TS.Matrix]
-    row: Literal[TS.Int]
-    col: Literal[TS.Int]
+class MatrixRef(Ref):
+    matrix: SymbolRef
+    row: Literal
+    col: Literal
     lineno: int
     type = TS.Int() | TS.Float()
 
 
 @dataclass(init=False)
-class Apply[T](Expr[T]):
-    ref: Ref[T]
+class Apply(Expr):
+    ref: Ref
     args: list[Expr]
     lineno: int
 
-    def __init__(self, ref: Ref[T], args: list[Expr], lineno: int):
+    def __init__(self, ref: Ref, args: list[Expr], lineno: int):
         self.ref = ref
         self.args = args
         self.lineno = lineno
@@ -121,8 +120,8 @@ class Apply[T](Expr[T]):
 
 @dataclass
 class Range(Expr):
-    start: Expr[TS.Int]
-    end: Expr[TS.Int]
+    start: Expr
+    end: Expr
     lineno: int
 
 
@@ -135,12 +134,12 @@ class Assign(Statement):
 
 @dataclass(init=False)
 class If(Statement):
-    condition: Expr[TS.Bool]
+    condition: Expr
     then: Block
     else_: Optional[Block]
     lineno: int
 
-    def __init__(self, condition: Expr[TS.Bool], then: list[Statement], else_: Optional[list[Statement]], lineno: int):
+    def __init__(self, condition: Expr, then: list[Statement], else_: Optional[list[Statement]], lineno: int):
         self.condition = condition
         self.then = Block(then)
         self.else_ = Block(else_) if else_ else None
@@ -149,11 +148,11 @@ class If(Statement):
 
 @dataclass(init=False)
 class While(Statement):
-    condition: Expr[TS.Bool]
+    condition: Expr
     body: Block
     lineno: int
 
-    def __init__(self, condition: Expr[TS.Bool], body: list[Statement], lineno: int):
+    def __init__(self, condition: Expr, body: list[Statement], lineno: int):
         self.condition = condition
         self.body = Block(body)
         self.lineno = lineno
@@ -166,9 +165,9 @@ class For(Statement):
     body: Block
     lineno: int
 
-    def __init__(self, var: SymbolRef, range: Range, body: list[Statement], lineno: int):
+    def __init__(self, var: SymbolRef, range_: Range, body: list[Statement], lineno: int):
         self.var = var
-        self.range = range
+        self.range = range_
         self.body = Block(body)
         self.lineno = lineno
 
