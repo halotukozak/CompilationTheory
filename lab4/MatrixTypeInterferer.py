@@ -1,30 +1,22 @@
-from lab4 import AST
 from lab4.AST import *
 from lab4.SymbolTable import SymbolTable
-from lab4.Utils import report_error, report_warn
+from lab4.TypeSystem import AnyOf
+from lab4.Utils import report_error
 
 
-class MatrixScoper:
+class MatrixTypeInterferer:
+
     def __init__(self, symbol_table: SymbolTable):
         self.symbol_table = symbol_table
-
-    def add_to_current_scope(self, symbol: SymbolRef) -> None:
-        if symbol in self.symbol_table.actual_scope:
-            report_warn(self, f"Variable {symbol.name} already defined.", symbol.lineno)
-        scope = self.symbol_table.actual_scope
-        scope.symbols[symbol.name] = symbol
-
-    def create_scope(self, tree: AST.Tree, in_loop: Optional[bool] = None):
-        key = id(tree)
-        new_scope = self.symbol_table.Scope(self.symbol_table.actual_scope, key, in_loop)
-        self.symbol_table.actual_scope.children[key] = new_scope
-        self.symbol_table.push_scope(tree)
 
     def get_symbol(self, name: str) -> Optional[SymbolRef]:
         return self.symbol_table.get_symbol(name)
 
     def pop_scope(self):
         self.symbol_table.pop_scope()
+
+    def push_scope(self, name: Any):
+        self.symbol_table.push_scope(name)
 
     def visit(self, node):
         method = 'visit_' + node.__class__.__name__
@@ -33,48 +25,44 @@ class MatrixScoper:
 
     @staticmethod
     def generic_visit(node):
-        print(f"MatrixScoper: No visit_{node.__class__.__name__} method")
+        print(f"MatrixTypeInterferer: No visit_{node.__class__.__name__} method")
 
     def visit_all(self, tree: list[Statement]):
         for node in tree:
             self.visit(node)
 
     def visit_If(self, if_: If):
-        self.create_scope(if_)
         self.visit(if_.condition)
-        self.create_scope(if_.then)
+        self.push_scope(if_.then)
         self.visit(if_.then)
         self.pop_scope()
         if if_.else_:
-            self.create_scope(if_.else_)
+            self.push_scope(if_.else_)
             self.visit(if_.else_)
             self.pop_scope()
 
     def visit_While(self, while_: While):
         self.visit(while_.condition)
-        self.create_scope(while_.body, in_loop=True)
+        self.push_scope(while_.body)
         self.visit(while_.body)
         self.pop_scope()
 
     def visit_For(self, for_: For):
         self.visit(for_.range)
-        self.create_scope(for_.body, in_loop=True)
-        self.add_to_current_scope(for_.var)
+        self.push_scope(for_.body)
         self.visit(for_.body)
         self.pop_scope()
 
     def visit_Break(self, break_: Break):
-        if not self.symbol_table.actual_scope.in_loop:
-            report_error(self, "Break outside loop", break_.lineno)
+        pass
 
     def visit_Continue(self, continue_: Continue):
-        if not self.symbol_table.actual_scope.in_loop:
-            report_error(self, "Continue outside loop", continue_.lineno)
+        pass
 
     def visit_SymbolRef(self, ref: SymbolRef):
         symbol = self.get_symbol(ref.name)
-        if symbol is None:
-            report_error(self, f"Undefined variable {ref.name}", ref.lineno)
+        if symbol is not None:
+            ref.type = symbol.type
 
     def visit_MatrixRef(self, ref: MatrixRef):
         self.visit(ref.matrix)
@@ -84,18 +72,40 @@ class MatrixScoper:
 
     def visit_Assign(self, assign: Assign):
         self.visit(assign.expr)
+        assign.var.type = assign.expr.type
         if isinstance(assign.var, SymbolRef):
             symbol = self.get_symbol(assign.var.name)
-            if symbol is None:
-                self.add_to_current_scope(assign.var)
+            if symbol is not None:
+                symbol.type = assign.var.type
+        else:
+            raise NotImplementedError
 
     def visit_Apply(self, apply: Apply):
         self.visit(apply.ref)
         for arg in apply.args:
             self.visit(arg)
+        arg_types = [arg.type for arg in apply.args]
+        if isinstance(apply.ref.type, AnyOf):
+            res = next(
+                (type_ for type_ in apply.ref.type.all if isinstance(type_, TS.Function) and type_.takes(arg_types)),
+                TS.undef()
+            )
+            if isinstance(res, TS.undef):
+                report_error(self, f"Function {apply.ref.name} with arguments {arg_types} not found", apply.lineno)
+                apply.ref.type = TS.undef()
+                apply.type = TS.undef()
+            else:
+                apply.ref.type = res
+                apply.type = res.result
+        elif isinstance(apply.ref.type, TS.Function):
+            apply.type = apply.ref.type.result
+        else:
+            pass
 
     def visit_Range(self, range_: Range):
         self.visit(range_.start)
+        if isinstance(range_.start, SymbolRef) and range_.start.type != TS.Int():
+            range_.start.type = TS.Int()
         self.visit(range_.end)
 
     def visit_Literal(self, literal: Literal):

@@ -72,6 +72,8 @@ class Or(AnyOf):
 class Vector(Type):
     arity: Optional[int] = None
 
+class Matrix(Type):
+    arity: Optional[Tuple[int, int]] = None
 
 @dataclass(repr=False)
 class VarArg(Type):
@@ -130,10 +132,6 @@ class Float(Type):
 
 
 class String(Type):
-    pass
-
-
-class Matrix(Type):
     pass
 
 

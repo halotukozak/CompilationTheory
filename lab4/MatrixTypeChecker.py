@@ -22,22 +22,22 @@ class MatrixTypeChecker:
         self.visit(if_.condition)
         if not isinstance(if_.condition.type, TS.Bool):
             report_error(self, f"Expected Bool, got {if_.condition.type}", if_.condition.lineno)
-        self.visit_all(if_.then)
+        self.visit(if_.then)
         if if_.else_:
-            self.visit_all(if_.else_)
+            self.visit(if_.else_)
 
     def visit_While(self, while_: While):
         self.visit(while_.condition)
         if not isinstance(while_.condition.type, TS.Bool):
             report_error(self, f"Expected Bool, got {while_.condition.type}", while_.condition.lineno)
-        self.visit_all(while_.body)
+        self.visit(while_.body)
 
     def visit_For(self, for_: For):
         self.visit(for_.range)
         self.visit(for_.var)
         if not isinstance(for_.var.type, TS.Int):
             report_error(self, f"Expected Int, got {for_.var.type}", for_.var.lineno)
-        self.visit_all(for_.body)
+        self.visit(for_.body)
 
     def visit_Break(self, break_: Break):
         pass
@@ -83,7 +83,7 @@ class MatrixTypeChecker:
                     if arg.type != expected_type:
                         report_error(self, f"Expected {expected_type}, got {arg.type}", apply.lineno)
         elif isinstance(apply, TS.undef):
-            report_error(self, f"Undefined function {apply.ref.name}", apply.lineno)
+            report_error(self, f"Undefined function {apply.ref.source}", apply.lineno)
         elif isinstance(apply.type, TS.undef):
             pass  # error already reported
         else:
@@ -102,3 +102,6 @@ class MatrixTypeChecker:
 
     def visit_Return(self, return_: Return):
         pass
+
+    def visit_Block(self, block: Block):
+        self.visit_all(block.statements)

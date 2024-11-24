@@ -51,7 +51,7 @@ binary_vector_type = TS.Function((ts_vector, ts_vector), ts_vector)
 
 unary = prepare({
     "UMINUS": unary_numerical_type,  # need to be distinct from binary
-    "'": TS.Function(ts_matrix, ts_matrix),
+    "'": TS.Function(ts_matrix, ts_matrix) | TS.Function(ts_vector, ts_vector),
     "eye": TS.Function(ts_int, ts_matrix),
     "zeros": TS.Function(ts_int, ts_matrix),
     "ones": TS.Function(ts_int, ts_matrix),

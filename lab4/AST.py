@@ -4,7 +4,7 @@ from typing import TypeVar, Any, Optional
 from lab4 import TypeSystem as TS
 
 # +- Tree -+- Statement -+- Def ---------+
-#                        |               +- FunDef
+#          +- Block      |               +- FunDef
 #                        |               +- VarDef
 #                        |
 #                        +- Expr --------+- Literal
@@ -32,6 +32,12 @@ class Tree:
 
 class Statement(Tree):
     pass
+
+
+# synthetic tree node to represent a block of statements
+@dataclass
+class Block(Tree):
+    statements: list[Statement]
 
 
 class Def(Statement):
@@ -127,27 +133,44 @@ class Assign(Statement):
     lineno: int
 
 
-@dataclass
+@dataclass(init=False)
 class If(Statement):
     condition: Expr[TS.Bool]
-    then: list[Statement]
-    else_: list[Statement] | None
+    then: Block
+    else_: Optional[Block]
     lineno: int
 
+    def __init__(self, condition: Expr[TS.Bool], then: list[Statement], else_: Optional[list[Statement]], lineno: int):
+        self.condition = condition
+        self.then = Block(then)
+        self.else_ = Block(else_) if else_ else None
+        self.lineno = lineno
 
-@dataclass
+
+@dataclass(init=False)
 class While(Statement):
     condition: Expr[TS.Bool]
-    body: list[Statement]
+    body: Block
     lineno: int
 
+    def __init__(self, condition: Expr[TS.Bool], body: list[Statement], lineno: int):
+        self.condition = condition
+        self.body = Block(body)
+        self.lineno = lineno
 
-@dataclass
+
+@dataclass(init=False)
 class For(Statement):
     var: SymbolRef
     range: Range
-    body: list[Statement]
+    body: Block
     lineno: int
+
+    def __init__(self, var: SymbolRef, range: Range, body: list[Statement], lineno: int):
+        self.var = var
+        self.range = range
+        self.body = Block(body)
+        self.lineno = lineno
 
 
 @dataclass
