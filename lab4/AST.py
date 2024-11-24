@@ -47,7 +47,7 @@ class VarDef(Def):
 
 
 class Expr[T](Statement):
-    type: T
+    type: TS.Type = T
 
 
 @dataclass
@@ -86,6 +86,7 @@ class VectorRef(Ref[TS.Vector]):
     vector: SymbolRef[TS.Vector]
     element: Literal[TS.Int]
     lineno: int
+    type = TS.Int() | TS.Float()
 
 
 @dataclass
@@ -94,18 +95,18 @@ class MatrixRef(Ref[TS.Matrix]):
     row: Literal[TS.Int]
     col: Literal[TS.Int]
     lineno: int
+    type = TS.Int() | TS.Float()
 
 
 @dataclass(init=False)
 class Apply[T](Expr[T]):
-    fun: Ref[T]
+    ref: Ref[T]
     args: list[Expr]
     lineno: int
 
-    def __init__(self, fun: Ref[T], args: list[Expr], lineno: int):
-        self.fun = fun
+    def __init__(self, ref: Ref[T], args: list[Expr], lineno: int):
+        self.ref = ref
         self.args = args
-        self.type = fun.type  # todo: result
         self.lineno = lineno
 
 

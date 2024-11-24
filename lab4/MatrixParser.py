@@ -4,6 +4,7 @@ from sly.yacc import YaccProduction
 from lab4 import AST
 from lab4 import Predef
 from lab4 import TypeSystem as TS
+from lab4.MatrixScanner import MatrixScanner
 from lab4.Utils import report_error
 
 
@@ -34,7 +35,7 @@ class MatrixParser(Parser):
         return p.instructions
 
     @_('')
-    def instructions_opt(self, p: YaccProduction):
+    def instructions_opt(self, _: YaccProduction):
         return []
 
     @_('instruction')
@@ -79,7 +80,7 @@ class MatrixParser(Parser):
 
     @_('FOR ID "=" range block')
     def instruction(self, p: YaccProduction):
-        var = AST.SymbolRef(p.ID, p.lineno, TS.Int)
+        var = AST.SymbolRef(p.ID, p.lineno, TS.Int())
         return AST.For(var, p.range, p.block, p.lineno)
 
     @_('expr ":" expr')
@@ -106,24 +107,23 @@ class MatrixParser(Parser):
                 expr = p.expr
             case _:
                 args = [p.element, p.expr]
-                expr = Apply(Predef.get(p.assign_op[:-1], args), args, p.lineno)
+                expr = AST.Apply(Predef[p.assign_op[:-1]], args, p.lineno)
         return AST.Assign(p.element, expr, p.lineno)
 
     @_('ID assign_op expr')
     def statement(self, p: YaccProduction):
+        var = AST.SymbolRef(p.ID, p.lineno, TS.undef())
         match p.assign_op:
             case "=":
                 expr = p.expr
             case _:
-                args = [p.element, p.expr]
-                expr = AST.Apply(Predef.get(p.assign_op[:-1], args), args, p.lineno)
-        var = AST.SymbolRef(p.ID, p.lineno, expr.type)
+                expr = AST.Apply(Predef.symbols[p.assign_op[:-1]], [var, p.expr], p.lineno)
+        var.type = expr.type
         return AST.Assign(var, expr, p.lineno)
 
     @_('function_name "(" var_args ")"')
     def expr(self, p: YaccProduction):
-        args = p.var_args
-        return AST.Apply(Predef.get(p.function_name, args), args, p.lineno)
+        return AST.Apply(Predef.symbols[p.function_name], p.var_args, p.lineno)
 
     @_('EYE', 'ONES', 'ZEROS')
     def function_name(self, p: YaccProduction):
@@ -131,8 +131,7 @@ class MatrixParser(Parser):
 
     @_('"[" var_args "]"')
     def matrix(self, p: YaccProduction):
-        args = p.var_args
-        return AST.Apply(Predef.get("INIT", args), args, p.lineno)
+        return AST.Apply(Predef.symbols["INIT"], p.var_args, p.lineno)
 
     @_('var "[" var_args "]"')
     def element(self, p: YaccProduction):
@@ -143,10 +142,11 @@ class MatrixParser(Parser):
                 return AST.MatrixRef(p.var, p.var_args[0], p.var_args[1], p.lineno)
             case _:
                 report_error(self, "Invalid matrix element reference", p.lineno)
+                return AST.MatrixRef(p.var, None, None, p.lineno)
 
     @_('ID')
     def var(self, p: YaccProduction):
-        return AST.SymbolRef(p[0], p.lineno, TS.undef)
+        return AST.SymbolRef(p[0], p.lineno, TS.undef())
 
     @_('expr "+" expr',
        'expr "-" expr',
@@ -157,8 +157,7 @@ class MatrixParser(Parser):
        'expr DOTMUL expr',
        'expr DOTDIV expr')
     def expr(self, p: YaccProduction):
-        args = [p.expr0, p.expr1]
-        return AST.Apply(Predef.get(p[1], args), args, p.lineno)
+        return AST.Apply(Predef.symbols[p[1]], [p.expr0, p.expr1], p.lineno)
 
     @_('var', 'matrix', 'element')
     def expr(self, p: YaccProduction):
@@ -179,12 +178,12 @@ class MatrixParser(Parser):
     @_('"-" expr %prec UMINUS')
     def expr(self, p: YaccProduction):
         args = [p.expr]
-        return AST.Apply(Predef.get("-", args), args, p.lineno)
+        return AST.Apply(Predef.symbols["UMINUS"], args, p.lineno)
 
     @_('expr "\'"')
     def expr(self, p: YaccProduction):
         args = [p.expr]
-        return AST.Apply(Predef.get("'", args), args, p.lineno)
+        return AST.Apply(Predef.symbols["'"], args, p.lineno)
 
     @_('BREAK')
     def statement(self, p: YaccProduction):
@@ -216,3 +215,5 @@ class MatrixParser(Parser):
             report_error(self, f"Syntax error: {p.type}('{p.value}')", p.lineno)
         else:
             report_error(self, "Syntax error", -1)
+
+# [Assign(var=SymbolRef(name='x', lineno=2, type=undef), expr=Literal(value=1, lineno=2, type=Int), lineno=2), Assign(var=SymbolRef(name='z', lineno=3, type=undef), expr=SymbolRef(name='x', lineno=3, type=undef), lineno=3), Assign(var=SymbolRef(name='z', lineno=4, type=undef), expr=Apply(fun=SymbolRef(name='+', lineno=None, type=Int | Float), args=[SymbolRef(name='z', lineno=4, type=undef), Literal(value=1, lineno=4, type=Int)], lineno=4), lineno=4), While(condition=Apply(fun=SymbolRef(name='<=', lineno=None, type=Bool), args=[SymbolRef(name='x', lineno=6, type=undef), Literal(value=0, lineno=6, type=Int)], lineno=6), body=[Assign(var=SymbolRef(name='undef_outside_scope', lineno=7, type=undef), expr=SymbolRef(name='x', lineno=7, type=undef), lineno=7)], lineno=6), While(condition=Apply(fun=SymbolRef(name='<=', lineno=None, type=Bool), args=[SymbolRef(name='undef', lineno=10, type=undef), Literal(value=0, lineno=10, type=Int)], lineno=10), body=[Assign(var=SymbolRef(name='undef_outside_scope', lineno=11, type=undef), expr=SymbolRef(name='undef', lineno=11, type=undef), lineno=11)], lineno=10), Assign(var=SymbolRef(name='M', lineno=14, type=undef), expr=Literal(value=5, lineno=14, type=Int), lineno=14), For(var=SymbolRef(name='j', lineno=16, type=Int), range=Range(start=SymbolRef(name='undef', lineno=16, type=undef), end=SymbolRef(name='M', lineno=16, type=undef), lineno=16), body=[Apply(fun=SymbolRef(name='PRINT', lineno=None, type=undef), args=[SymbolRef(name='undef', lineno=17, type=undef), SymbolRef(name='j', lineno=17, type=undef)], lineno=17)], lineno=16), Assign(var=SymbolRef(name='x', lineno=20, type=undef), expr=SymbolRef(name='undef_outside_scope', lineno=20, type=undef), lineno=20)]

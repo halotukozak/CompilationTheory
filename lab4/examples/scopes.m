@@ -1,5 +1,5 @@
 #nonexisting symbol
-x = undef;
+x = 1;
 z = x;
 z += 1;
 

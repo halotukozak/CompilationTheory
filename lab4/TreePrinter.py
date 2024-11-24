@@ -52,7 +52,7 @@ class TreePrinter:
 
     @addToClass(Apply)
     def print_tree(self: Apply, indent_level=0):
-        print("|  " * indent_level + f"{self.fun.name}")
+        print("|  " * indent_level + f"{self.ref.name}")
         print("|  " * (indent_level + 1) + "ARGUMENTS")
         for arg in self.args:
             TreePrinter.safe_print_tree(arg, indent_level + 2)

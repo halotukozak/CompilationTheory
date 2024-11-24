@@ -1,14 +1,12 @@
-from functools import reduce
-
 from lab4 import Predef
 from lab4.AST import *
+from lab4.TypeSystem import AnyOf
 from lab4.Utils import report_error
 
 
 class MatrixScoper:
+    # todo: for now, we only persist types
     class SymbolTable(object):
-
-        all = (Predef.unary, Predef.binary, Predef.var_args)
 
         class Scope(object):
             symbols = {}
@@ -21,26 +19,29 @@ class MatrixScoper:
                 else:
                     self.in_loop = parent.in_loop
 
-            def put(self, name, symbol):
+            def put(self, name: str, symbol: SymbolRef):
                 self.symbols[name] = symbol
 
-            def get(self, name):
+            def get(self, name: str) -> Optional[SymbolRef]:
                 if name in self.symbols.keys():
                     return self.symbols[name]
                 return self.parent.get(name) if self.parent else None
 
-        global_functions = reduce(lambda x, y: dict(x, **y), all)
+            def __contains__(self, symbol: SymbolRef) -> bool:
+                return symbol.name in self.symbols.keys() or (self.parent is not None and symbol in self.parent)
 
         global_scope = Scope(None, "global", False)
-        global_scope.symbols = {name: True for name in global_functions}
+        global_scope.symbols = Predef.symbols
 
         actual_scope = global_scope
 
-        def get(self, name):
+        def get(self, name: str) -> Optional[SymbolRef]:
             return self.actual_scope.get(name)
 
-        def add_to_current_scope(self, name, symbol):
-            self.actual_scope.put(name, symbol)
+        def add_to_current_scope(self, symbol: SymbolRef) -> None:
+            if symbol in self.actual_scope:
+                report_error(self, f"Variable {symbol.name} already defined", symbol.lineno)
+            self.actual_scope.put(symbol.name, symbol)
 
         def push_scope(self, name, in_loop: Optional[bool] = None):
             self.actual_scope = self.Scope(self.actual_scope, name, in_loop)
@@ -82,7 +83,7 @@ class MatrixScoper:
     def visit_For(self, for_: For):
         self.symbol_table.push_scope("for", in_loop=True)
         self.visit(for_.range)
-        self.symbol_table.add_to_current_scope(for_.var.name, for_.var)
+        self.symbol_table.add_to_current_scope(for_.var)
         self.visit_all(for_.body)
         self.symbol_table.pop_scope()
 
@@ -95,8 +96,11 @@ class MatrixScoper:
             report_error(self, "Continue outside loop", continue_.lineno)
 
     def visit_SymbolRef(self, ref: SymbolRef):
-        if self.symbol_table.get(ref.name) is None:
+        symbol = self.symbol_table.get(ref.name)
+        if symbol is None:
             report_error(self, f"Undefined variable {ref.name}", ref.lineno)
+        else:
+            ref.type = symbol.type
 
     def visit_MatrixRef(self, ref: MatrixRef):
         self.visit(ref.matrix)
@@ -106,15 +110,35 @@ class MatrixScoper:
 
     def visit_Assign(self, assign: Assign):
         self.visit(assign.expr)
+        assign.var.type = assign.expr.type
         if isinstance(assign.var, SymbolRef):
-            self.symbol_table.add_to_current_scope(assign.var.name, assign)
+            symbol = self.symbol_table.get(assign.var.name)
+            if symbol is None:
+                self.symbol_table.add_to_current_scope(assign.var)
+            else:
+                symbol.type = assign.var.type
         else:
-            self.visit(assign.var)
+            raise NotImplementedError
 
     def visit_Apply(self, apply: Apply):
-        self.visit(apply.fun)
+        self.visit(apply.ref)
         for arg in apply.args:
             self.visit(arg)
+        arg_types = [arg.type for arg in apply.args]
+        if isinstance(apply.ref.type, AnyOf):
+            res = next(
+                (type_ for type_ in apply.ref.type.all if isinstance(type_, TS.Function) and type_.takes(arg_types)),
+                TS.undef()
+            )
+            if isinstance(res, TS.undef):
+                report_error(self, f"Function {apply.ref.name} with arguments {arg_types} not found", apply.lineno)
+                apply.type = TS.undef()
+            else:
+                apply.type = res.result
+        elif isinstance(apply.ref.type, TS.Function):
+            apply.type = apply.ref.type.result
+        else:
+            pass
 
     def visit_Range(self, range_: Range):
         self.visit(range_.start)

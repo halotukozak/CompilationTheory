@@ -3,10 +3,10 @@ import sys
 from lab4.MatrixParser import MatrixParser
 from lab4.MatrixScanner import MatrixScanner
 from lab4.MatrixScoper import MatrixScoper
-from lab4.TypeChecker import MatrixTypeChecker
+from lab4.MatrixTypeChecker import MatrixTypeChecker
 
 if __name__ == '__main__':
-    name = "examples/init.m"
+    name = "examples/opers_without_syntax_errors.m"
     filename = sys.argv[1] if len(sys.argv) > 1 else name
     try:
         file = open(filename, "r")
