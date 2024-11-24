@@ -1,6 +1,6 @@
 from lab4 import TypeSystem as TS
 from lab4.AST import SymbolRef
-from lab4.TypeSystem import AnyOf, VarArg, Type
+from lab4.TypeSystem import VarArg, Type
 
 
 def parse_result(type_: Type) -> Type:
@@ -32,19 +32,15 @@ ts_vector = TS.Vector()
 
 unary_numerical_type = TS.Function(ts_int, ts_int) | TS.Function(ts_float, ts_float)
 
-binary_numerical_type = AnyOf(
-    TS.Function((ts_int, ts_int), ts_int),
-    TS.Function((ts_float, ts_float), ts_float),
-    TS.Function((ts_int, ts_float), ts_float),
-    TS.Function((ts_float, ts_int), ts_float),
-)
+binary_numerical_type = TS.Function((ts_int, ts_int), ts_int) \
+                        | TS.Function((ts_float, ts_float), ts_float) \
+                        | TS.Function((ts_int, ts_float), ts_float) \
+                        | TS.Function((ts_float, ts_int), ts_float)
 
-binary_numerical_condition_type = AnyOf(
-    TS.Function((ts_int, ts_int), ts_bool),
-    TS.Function((ts_float, ts_float), ts_bool),
-    TS.Function((ts_int, ts_float), ts_bool),
-    TS.Function((ts_float, ts_int), ts_bool),
-)
+binary_numerical_condition_type = TS.Function((ts_int, ts_int), ts_bool) \
+                                  | TS.Function((ts_float, ts_float), ts_bool) \
+                                  | TS.Function((ts_int, ts_float), ts_bool) \
+                                  | TS.Function((ts_float, ts_int), ts_bool)
 
 binary_matrix_type = TS.Function((ts_matrix, ts_matrix), ts_matrix)
 binary_vector_type = TS.Function((ts_vector, ts_vector), ts_vector)
@@ -57,11 +53,15 @@ unary = prepare({
     "ones": TS.Function(ts_int, ts_matrix),
 })
 
+numerical_type = ts_int | ts_float
+matrix_scalar_type = TS.Function((ts_matrix, numerical_type), ts_matrix) \
+                     | TS.Function((ts_vector, numerical_type), ts_vector)
+
 binary = prepare({
     "+": binary_numerical_type | binary_matrix_type | binary_vector_type,
     "-": binary_numerical_type | binary_matrix_type | binary_vector_type,
-    "*": binary_numerical_type | binary_matrix_type | binary_vector_type,
-    "/": binary_numerical_type | binary_matrix_type | binary_vector_type,
+    "*": binary_numerical_type | binary_matrix_type | binary_vector_type | matrix_scalar_type,
+    "/": binary_numerical_type | binary_matrix_type | binary_vector_type | matrix_scalar_type,
     "==": binary_numerical_condition_type,
     "!=": binary_numerical_condition_type,
     "<=": binary_numerical_condition_type,
