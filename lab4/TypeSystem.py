@@ -3,6 +3,10 @@ from dataclasses import dataclass
 from typing import Tuple, Optional
 
 
+
+from dataclasses import dataclass
+
+
 class Type:
     def __eq__(self, other) -> bool:
         if isinstance(other, AnyOf) and isinstance(self, AnyOf):

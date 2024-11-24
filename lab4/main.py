@@ -1,8 +1,12 @@
 import sys
+import os 
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lab4.MatrixParser import MatrixParser
 from lab4.MatrixScanner import MatrixScanner
 from lab4.MatrixScoper import MatrixScoper
+from lab4.MatrixTypeChecker import MatrixTypeChecker
 from lab4.MatrixTypeChecker import MatrixTypeChecker
 
 if __name__ == '__main__':

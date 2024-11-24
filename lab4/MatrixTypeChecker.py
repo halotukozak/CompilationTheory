@@ -19,22 +19,33 @@ class MatrixTypeChecker:
             self.visit(node)
 
     def visit_If(self, if_: If):
-        raise NotImplementedError
+        self.visit(if_.condition)
+        for stmt in if_.then:
+            self.visit(stmt)
+        if if_.else_:
+            for stmt in if_.else_:
+                self.visit(stmt)
 
     def visit_While(self, while_: While):
-        raise NotImplementedError
+        self.visit(while_.condition)
+        for stmt in while_.body:
+            self.visit(stmt)
 
     def visit_For(self, for_: For):
-        raise NotImplementedError
+        self.visit(for_.range)
+        self.visit(for_.var)
+        for stmt in for_.body:
+            self.visit(stmt)
 
     def visit_Break(self, break_: Break):
-        raise NotImplementedError
+        pass
 
     def visit_Continue(self, continue_: Continue):
-        raise NotImplementedError
+        pass
 
     def visit_SymbolRef(self, ref: SymbolRef):
-        raise NotImplementedError
+        if ref.type == TS.undef():
+            report_error(self, f"Undefined variable {ref.name}", ref.lineno)
 
     def visit_MatrixRef(self, ref: MatrixRef):
         if not isinstance(ref.matrix.type, TS.Matrix):
@@ -78,10 +89,13 @@ class MatrixTypeChecker:
             raise NotImplementedError
 
     def visit_Range(self, range_: Range):
-        raise NotImplementedError
+        self.visit(range_.start)
+        self.visit(range_.end)
+        if range_.start.type != TS.Int() or range_.end.type != TS.Int():
+            report_error(self, f"Expected Int range, got {range_.start.type} to {range_.end.type}", range_.lineno)
 
     def visit_Literal(self, literal: Literal):
         pass
 
     def visit_Return(self, return_: Return):
-        raise NotImplementedError
+        pass

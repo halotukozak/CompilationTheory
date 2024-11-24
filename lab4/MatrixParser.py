@@ -6,6 +6,7 @@ from lab4 import Predef
 from lab4 import TypeSystem as TS
 from lab4.MatrixScanner import MatrixScanner
 from lab4.Utils import report_error
+from lab4.MatrixScanner import MatrixScanner
 
 
 # noinspection PyUnresolvedReferences
@@ -94,7 +95,7 @@ class MatrixParser(Parser):
     @_('expr comparator expr')
     def condition(self, p: YaccProduction):
         args = [p.expr0, p.expr1]
-        return AST.Apply(Predef.get_symbol(p.comparator), args, p.lineno)
+        return AST.Apply(Predef.get_symbol(p.comparator), args, p[0].lineno)
 
     @_('MULASSIGN', 'DIVASSIGN', 'SUBASSIGN', 'ADDASSIGN', '"="')
     def assign_op(self, p: YaccProduction):

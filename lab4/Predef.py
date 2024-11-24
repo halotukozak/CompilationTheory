@@ -29,6 +29,7 @@ ts_int = TS.Int()
 ts_bool = TS.Bool()
 ts_matrix = TS.Matrix()
 ts_vector = TS.Vector()
+ts_string = TS.String()
 
 unary_numerical_type = TS.Function(ts_int, ts_int) | TS.Function(ts_float, ts_float)
 
@@ -77,7 +78,7 @@ binary = prepare({
 var_args = prepare({
     "INIT": TS.Function(VarArg(ts_float | ts_int), ts_vector) |
             TS.Function(VarArg(ts_vector), ts_matrix),
-    "PRINT": TS.Function(VarArg(ts_undef), ts_undef),
+    "PRINT": TS.Function(VarArg(ts_string | ts_float | ts_int), ts_string),
 })
 
 symbols = {**unary, **binary, **var_args}
