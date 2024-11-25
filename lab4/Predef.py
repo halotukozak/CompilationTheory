@@ -1,4 +1,4 @@
-from typing import Callable, Any
+from typing import Any, Callable
 
 from lab4 import TypeSystem as TS
 from lab4.AST import SymbolRef

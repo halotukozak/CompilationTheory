@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from lab4.AST import *
 from lab4.Utils import report_error, report_warn
 
@@ -65,31 +63,40 @@ class MatrixTypeChecker:
         assign.var.type = assign.expr.type
 
     def visit_Apply(self, apply: Apply):
+        self.visit(apply.ref)
+        self.visit_all(apply.args)
+        assert isinstance(apply.ref, SymbolRef)
         ref_type = apply.ref.type
+
         if isinstance(ref_type, TS.Function):
-            if ref_type.args is None:
-                if apply.args:
-                    report_error(self, f"Expected 0 arguments, got {len(apply.args)}", apply.lineno)
-            elif isinstance(ref_type.args, TS.VarArg):
-                expected_type = ref_type.args.type
-                for arg in apply.args:
-                    if arg.type != expected_type:
-                        report_error(self, f"Expected {expected_type}, got {arg.type}", apply.lineno)
-            elif isinstance(ref_type.args, TS.Type):
-                if len(apply.args) != 1:
-                    report_error(self, f"Expected 1 argument, got {len(apply.args)}", apply.lineno)
-                if apply.args[0].type != ref_type.args:
-                    report_error(self, f"Expected {ref_type.args}, got {apply.args[0].type}", apply.lineno)
-            elif isinstance(ref_type.args, Tuple):
-                if len(apply.args) != len(ref_type.args):
-                    report_error(self, f"Expected {len(ref_type.args)} arguments, got {len(apply.args)}", apply.lineno)
-                for arg, expected_type in zip(apply.args, ref_type.args):
-                    if arg.type != expected_type:
-                        report_error(self, f"Expected {expected_type}, got {arg.type}", apply.lineno)
-        elif isinstance(apply.ref.type, TS.undef):
-            pass  # or not implemented?
-        elif isinstance(apply.type, TS.undef):
-            pass  # error already reported
+            if ref_type.arity is not None and len(apply.args) != ref_type.arity:
+                optional_s = "" if ref_type.arity == 1 else "s"
+                report_error(self,
+                             f"Function {apply.ref.name} expects {ref_type.arity} argument{optional_s}, got {len(apply.args)}",
+                             apply.lineno)
+            match ref_type.args:
+                case None:
+                    raise NotImplementedError
+                case TS.VarArg(expected_type):
+                    for arg in apply.args:
+                        if arg.type != expected_type:
+                            report_error(self,
+                                         f"Function {apply.ref.name} expects {expected_type} arguments, got {arg.type}",
+                                         apply.lineno)
+                case TS.Type():
+                    if apply.args[0].type != ref_type.args:
+                        report_error(self,
+                                     f"Function {apply.ref.name} expects {ref_type.args} argument, got {apply.args[0].type}",
+                                     apply.lineno)
+                case _:  # Tuple
+                    for arg, expected_type in zip(apply.args, ref_type.args):
+                        if arg.type != expected_type:
+                            report_error(self,
+                                         f"Function {apply.ref.name} expects {expected_type} arguments, got {arg.type}",
+                                         apply.lineno)
+        elif isinstance(ref_type, TS.undef):
+            report_error(self, f"Undefined function {apply.ref.name} with {[arg.type for arg in apply.args]} arguments",
+                         apply.lineno)
         else:
             raise NotImplementedError
 

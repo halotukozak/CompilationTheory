@@ -4,8 +4,6 @@ from lab4.MatrixParser import MatrixParser
 from lab4.MatrixScanner import MatrixScanner
 from lab4.MatrixScoper import MatrixScoper
 from lab4.MatrixTypeChecker import MatrixTypeChecker
-from lab4.MatrixTypeInterferer import MatrixTypeInterferer
-from lab4.SymbolTable import SymbolTable
 from lab4.Utils import errors_and_warnings
 
 if __name__ == '__main__':
@@ -34,18 +32,13 @@ if __name__ == '__main__':
     # treePrinter = TreePrinter()
     # treePrinter.print_result(result)
 
-    symbol_table = SymbolTable()
-
-    scoper = MatrixScoper(symbol_table)
+    scoper = MatrixScoper()
     scoper.visit_all(ast)
-
-    type_interferer = MatrixTypeInterferer(symbol_table)
-    type_interferer.visit_all(ast)
 
     type_checker = MatrixTypeChecker()
     type_checker.visit_all(ast)
 
-    print(ast)
+    # print(ast)
 
     for i, line in sorted(errors_and_warnings.items()):
         tab = "  " if i < 10 else " " if i < 100 else ""
