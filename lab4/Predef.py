@@ -5,6 +5,8 @@ from lab4.AST import SymbolRef
 from lab4.TypeSystem import VarArg, Type
 
 
+# these dictionaries should be more generic, but there is so much boilerplate in the code
+
 def parse_result(type_: Type) -> Type:
     if isinstance(type_, TS.Function):
         return type_.result
@@ -35,14 +37,9 @@ ts_vector = TS.Vector()
 unary_numerical_type = TS.Function(ts_int, ts_int) | TS.Function(ts_float, ts_float)
 
 binary_numerical_type = TS.Function((ts_int, ts_int), ts_int) \
-                        | TS.Function((ts_float, ts_float), ts_float) \
-                        | TS.Function((ts_int, ts_float), ts_float) \
-                        | TS.Function((ts_float, ts_int), ts_float)
+                        | TS.Function((TS.numerical, TS.numerical), ts_float)
 
-binary_numerical_condition_type = TS.Function((ts_int, ts_int), ts_bool) \
-                                  | TS.Function((ts_float, ts_float), ts_bool) \
-                                  | TS.Function((ts_int, ts_float), ts_bool) \
-                                  | TS.Function((ts_float, ts_int), ts_bool)
+binary_numerical_condition_type = TS.Function((TS.numerical, TS.numerical), ts_bool)
 
 binary_matrix_type = TS.Function((ts_matrix, ts_matrix), ts_matrix)
 binary_vector_type = TS.Function((ts_vector, ts_vector), ts_vector)
@@ -55,9 +52,8 @@ unary = prepare({
     "ones": TS.Function(ts_int, ts_matrix),
 })
 
-numerical_type = ts_int | ts_float
-matrix_scalar_type = TS.Function((ts_matrix, numerical_type), ts_matrix) \
-                     | TS.Function((ts_vector, numerical_type), ts_vector)
+matrix_scalar_type = TS.Function((ts_matrix, TS.numerical), ts_matrix) \
+                     | TS.Function((ts_vector, TS.numerical), ts_vector)
 
 binary = prepare({
     "+": binary_numerical_type | binary_matrix_type | binary_vector_type,
@@ -77,27 +73,96 @@ binary = prepare({
 })
 
 var_args = prepare({
-    "INIT": TS.Function(VarArg(ts_float | ts_int), ts_vector) |
+    "INIT": TS.Function(VarArg(TS.numerical), ts_vector) |
             TS.Function(VarArg(ts_vector), ts_matrix),
     "PRINT": TS.Function(VarArg(TS.Any()), ts_undef),
 })
 
-callables = {
-    "INIT_VECTOR": lambda *arity: SymbolRef(
+init_callables = {
+    "INIT_VECTOR": lambda n: SymbolRef(
         "INIT_VECTOR",
         None,
-        TS.Function(VarArg(ts_float | ts_int), TS.Vector(arity[0]))
+        TS.Function(VarArg(TS.numerical), TS.Vector(n))
     ),
-    "INIT_MATRIX": lambda *arity: SymbolRef(
+    "INIT_MATRIX": lambda n, m: SymbolRef(
         "INIT_MATRIX",
         None,
-        TS.Function(VarArg(TS.Vector(arity[1])), TS.Matrix(arity))
+        TS.Function(VarArg(TS.Vector(m)), TS.Matrix((n, m)))
     ),
 }
+
+vector_callables = {
+    "-_Vector": lambda n, sym: SymbolRef(
+        f"{sym}_Vector",
+        None,
+        TS.Function(TS.Vector(n), TS.Vector(n))
+    ),
+    "'_Vector": lambda n, sym: SymbolRef(
+        f"{sym}_Vector",
+        None,
+        TS.Function(TS.Vector(n), TS.Vector(n))
+    ),
+    "BINARY_Vector": lambda n, sym: SymbolRef(
+        f"{sym}_Vector",
+        None,
+        TS.Function((TS.Vector(n), TS.Vector(n)), TS.Vector(n))
+    ),
+    "SCALAR_Vector": lambda n, sym: SymbolRef(
+        f"{sym}_Vector",
+        None,
+        TS.Function((TS.Vector(n), TS.numerical), TS.Vector(n))
+    ),
+}
+
+matrix_callables = {
+    "-_Matrix": lambda n, m, sym: SymbolRef(
+        f"{sym}_Metrix",
+        None,
+        TS.Function(TS.Matrix((n, m)), TS.Matrix((n, m)))
+    ),
+    "'_Matrix": lambda n, m, sym: SymbolRef(
+        "'_Metrix",
+        None,
+        TS.Function(TS.Matrix((n, m)), TS.Matrix((m, n)))
+    ),
+    "BINARY_Matrix": lambda n, m, sym: SymbolRef(
+        f"{sym}_Matrix",
+        None,
+        TS.Function((TS.Matrix((n, m)), TS.Matrix((n, m))), TS.Matrix((n, m)))
+    ),
+    "SCALAR_Matrix": lambda n, m, sym: SymbolRef(
+        f"{sym}_Matrix",
+        None,
+        TS.Function((TS.Matrix((n, m)), TS.numerical), TS.Matrix((n, m)))
+    ),
+    "*_Matrix": lambda n, m, p, sym: SymbolRef(
+        f"*_Matrix",
+        None,
+        TS.Function((TS.Matrix((n, m)), TS.Matrix((m, p))), TS.Matrix((n, p)))
+    ),
+    "ones_Matrix": lambda n: SymbolRef(
+        "ones_Matrix",
+        None,
+        TS.Function(ts_int, TS.Matrix((n, n)))
+    ),
+    "zeros_Matrix": lambda n: SymbolRef(
+        "zeros_Matrix",
+        None,
+        TS.Function(ts_int, TS.Matrix((n, n)))
+    ),
+    "eye_Matrix": lambda n: SymbolRef(
+        "eye_Matrix",
+        None,
+        TS.Function(ts_int, TS.Matrix((n, n)))
+    ),
+}
+
+callables = {**init_callables, **vector_callables, **matrix_callables}
 
 symbols = {**unary, **binary, **var_args, **callables}
 
 
+# todo: maybe split into two functions?
 def get_symbol(name: str) -> SymbolRef | Callable[[Any], SymbolRef]:
     res = symbols[name]
     if isinstance(res, SymbolRef):

@@ -11,7 +11,8 @@ D = C + C;
 E = C .* C;
 
 # Transpose and scalar operations
-T = A';
+X = ones(3);
+T = X';
 S = T * 2.5;
 
 # Matrix creation with nested vectors

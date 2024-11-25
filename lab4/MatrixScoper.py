@@ -91,8 +91,7 @@ class MatrixScoper:
 
     def visit_Apply(self, apply: Apply):
         self.visit(apply.ref)
-        for arg in apply.args:
-            self.visit(arg)
+        self.visit_all(apply.args)
 
     def visit_Range(self, range_: Range):
         self.visit(range_.start)

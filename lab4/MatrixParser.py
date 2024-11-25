@@ -148,6 +148,7 @@ class MatrixParser(Parser):
     def var(self, p: YaccProduction):
         return AST.SymbolRef(p[0], p.lineno, TS.undef())
 
+    # todo maybe can be extracted to binary_operator non-terminal
     @_('expr "+" expr',
        'expr "-" expr',
        'expr "*" expr',
@@ -216,4 +217,3 @@ class MatrixParser(Parser):
         else:
             report_error(self, "Syntax error", -1)
 
-# [Assign(var=SymbolRef(name='x', lineno=2, type=undef), expr=Literal(value=1, lineno=2, type=Int), lineno=2), Assign(var=SymbolRef(name='z', lineno=3, type=undef), expr=SymbolRef(name='x', lineno=3, type=undef), lineno=3), Assign(var=SymbolRef(name='z', lineno=4, type=undef), expr=Apply(fun=SymbolRef(name='+', lineno=None, type=Int | Float), args=[SymbolRef(name='z', lineno=4, type=undef), Literal(value=1, lineno=4, type=Int)], lineno=4), lineno=4), While(condition=Apply(fun=SymbolRef(name='<=', lineno=None, type=Bool), args=[SymbolRef(name='x', lineno=6, type=undef), Literal(value=0, lineno=6, type=Int)], lineno=6), body=[Assign(var=SymbolRef(name='undef_outside_scope', lineno=7, type=undef), expr=SymbolRef(name='x', lineno=7, type=undef), lineno=7)], lineno=6), While(condition=Apply(fun=SymbolRef(name='<=', lineno=None, type=Bool), args=[SymbolRef(name='undef', lineno=10, type=undef), Literal(value=0, lineno=10, type=Int)], lineno=10), body=[Assign(var=SymbolRef(name='undef_outside_scope', lineno=11, type=undef), expr=SymbolRef(name='undef', lineno=11, type=undef), lineno=11)], lineno=10), Assign(var=SymbolRef(name='M', lineno=14, type=undef), expr=Literal(value=5, lineno=14, type=Int), lineno=14), For(var=SymbolRef(name='j', lineno=16, type=Int), range=Range(start=SymbolRef(name='undef', lineno=16, type=undef), end=SymbolRef(name='M', lineno=16, type=undef), lineno=16), body=[Apply(fun=SymbolRef(name='PRINT', lineno=None, type=undef), args=[SymbolRef(name='undef', lineno=17, type=undef), SymbolRef(name='j', lineno=17, type=undef)], lineno=17)], lineno=16), Assign(var=SymbolRef(name='x', lineno=20, type=undef), expr=SymbolRef(name='undef_outside_scope', lineno=20, type=undef), lineno=20)]

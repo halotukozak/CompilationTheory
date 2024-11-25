@@ -69,8 +69,6 @@ class Or(AnyOf):
 
 
 class Vector(Type):
-    arity: Optional[int] = None
-
     def __init__(self, arity: Optional[int] = None):
         self.arity = arity
 
@@ -85,8 +83,6 @@ class Vector(Type):
 
 
 class Matrix(Type):
-    arity: Optional[Tuple[int, int]] = None
-
     def __init__(self, arity: Optional[Tuple[int, int]] = None):
         self.arity = arity
 
@@ -159,3 +155,6 @@ class String(Type):
 
 class Bool(Type):
     pass
+
+
+numerical = Int() | Float()

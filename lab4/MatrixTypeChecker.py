@@ -1,7 +1,7 @@
 from typing import Tuple
 
 from lab4.AST import *
-from lab4.Utils import report_error
+from lab4.Utils import report_error, report_warn
 
 
 class MatrixTypeChecker:
@@ -49,11 +49,15 @@ class MatrixTypeChecker:
         pass
 
     def visit_MatrixRef(self, ref: MatrixRef):
-        if not isinstance(ref.matrix.type, TS.Matrix):
+        if ref.matrix.type == TS.undef():
+            report_warn(self, "Matrix type could not be inferred", ref.lineno)
+        elif not isinstance(ref.matrix.type, TS.Matrix):
             report_error(self, f"Expected Matrix, got {ref.matrix.type}", ref.lineno)
 
     def visit_VectorRef(self, ref: VectorRef):
-        if not isinstance(ref.vector.type, TS.Vector):
+        if ref.vector.type == TS.undef():
+            report_warn(self, "Vector type could not be inferred", ref.lineno)
+        elif not isinstance(ref.vector.type, TS.Vector):
             report_error(self, f"Expected Vector, got {ref.vector.type}", ref.lineno)
 
     def visit_Assign(self, assign: Assign):
@@ -82,8 +86,8 @@ class MatrixTypeChecker:
                 for arg, expected_type in zip(apply.args, ref_type.args):
                     if arg.type != expected_type:
                         report_error(self, f"Expected {expected_type}, got {arg.type}", apply.lineno)
-        elif isinstance(apply, TS.undef):
-            report_error(self, f"Undefined function {apply.ref.source}", apply.lineno)
+        elif isinstance(apply.ref.type, TS.undef):
+            pass  # or not implemented?
         elif isinstance(apply.type, TS.undef):
             pass  # error already reported
         else:

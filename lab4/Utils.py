@@ -1,10 +1,23 @@
+from collections import defaultdict
+
+debug = True
+
+errors_and_warnings = defaultdict(lambda: [])
+
+
+def report(message: str, lineno: int, level: str):
+    errors_and_warnings[lineno].append((message, message))
+    if debug:
+        print(f"{level} at line {lineno}: {message}")
+
+
 def report_error(self, message: str, lineno: int):
     self.failed = True
-    print(f"Error at line {lineno}: {message}")
+    report(message, lineno, "error")
 
 
 def report_warn(self, message: str, lineno: int):
-    print(f"Warn at line {lineno}: {message}")
+    report(message, lineno, "warn")
 
 
 def addToClass(cls):
