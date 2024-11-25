@@ -9,8 +9,12 @@ class MatrixScoper:
         self.symbol_table = symbol_table
 
     def add_to_current_scope(self, symbol: SymbolRef) -> None:
-        if symbol in self.symbol_table.actual_scope:
-            report_warn(self, f"Variable {symbol.name} already defined.", symbol.lineno)
+        existing_symbol = self.get_symbol(symbol.name)
+        if existing_symbol is not None and existing_symbol.type != symbol.type:
+            report_warn(self,
+                        f"Redeclaration of {symbol.name} : {existing_symbol.type} with new {symbol.type} type.",
+                        symbol.lineno,
+                        )
         scope = self.symbol_table.actual_scope
         scope.symbols[symbol.name] = symbol
 

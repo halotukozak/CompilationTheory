@@ -29,7 +29,7 @@ if __name__ == '__main__':
     quit_if_failed(lexer)
 
     parser = MatrixParser()
-    result = parser.parse(tokens)
+    ast = parser.parse(tokens)
     quit_if_failed(parser)
     # treePrinter = TreePrinter()
     # treePrinter.print_result(result)
@@ -37,13 +37,15 @@ if __name__ == '__main__':
     symbol_table = SymbolTable()
 
     scoper = MatrixScoper(symbol_table)
-    scoper.visit_all(result)
+    scoper.visit_all(ast)
 
     type_interferer = MatrixTypeInterferer(symbol_table)
-    type_interferer.visit_all(result)
+    type_interferer.visit_all(ast)
 
     type_checker = MatrixTypeChecker()
-    type_checker.visit_all(result)
+    type_checker.visit_all(ast)
+
+    print(ast)
 
     for i, line in sorted(errors_and_warnings.items()):
         tab = "  " if i < 10 else " " if i < 100 else ""
