@@ -35,6 +35,8 @@ ts_matrix = TS.Matrix()
 ts_vector = TS.Vector()
 
 unary_numerical_type = TS.Function(ts_int, ts_int) | TS.Function(ts_float, ts_float)
+unary_vector_type = TS.Function(ts_vector, ts_vector)
+unary_matrix_type = TS.Function(ts_matrix, ts_matrix)
 
 binary_numerical_type = TS.Function((ts_int, ts_int), ts_int) \
                         | TS.Function((TS.numerical, TS.numerical), ts_float)
@@ -45,31 +47,31 @@ binary_matrix_type = TS.Function((ts_matrix, ts_matrix), ts_matrix)
 binary_vector_type = TS.Function((ts_vector, ts_vector), ts_vector)
 
 unary = prepare({
-    "UMINUS": unary_numerical_type,  # need to be distinct from binary
+    "UMINUS": unary_numerical_type | unary_vector_type | unary_matrix_type,
     "'": TS.Function(ts_matrix, ts_matrix) | TS.Function(ts_vector, ts_vector),
     "eye": TS.Function(ts_int, ts_matrix),
     "zeros": TS.Function(ts_int, ts_matrix),
     "ones": TS.Function(ts_int, ts_matrix),
 })
 
-matrix_scalar_type = TS.Function((ts_matrix, TS.numerical), ts_matrix) \
-                     | TS.Function((ts_vector, TS.numerical), ts_vector)
+scalar_type = TS.Function((ts_matrix, TS.numerical), ts_matrix) \
+              | TS.Function((ts_vector, TS.numerical), ts_vector)
 
 binary = prepare({
     "+": binary_numerical_type | binary_matrix_type | binary_vector_type,
     "-": binary_numerical_type | binary_matrix_type | binary_vector_type,
-    "*": binary_numerical_type | binary_matrix_type | binary_vector_type | matrix_scalar_type,
-    "/": binary_numerical_type | binary_matrix_type | binary_vector_type | matrix_scalar_type,
+    "*": binary_numerical_type | binary_matrix_type | binary_vector_type | scalar_type,
+    "/": binary_numerical_type | binary_matrix_type | binary_vector_type | scalar_type,
     "==": binary_numerical_condition_type,
     "!=": binary_numerical_condition_type,
     "<=": binary_numerical_condition_type,
     ">=": binary_numerical_condition_type,
     ">": binary_numerical_condition_type,
     "<": binary_numerical_condition_type,
-    ".+": (binary_matrix_type | binary_vector_type),
-    ".-": (binary_matrix_type | binary_vector_type),
-    ".*": (binary_matrix_type | binary_vector_type),
-    "./": (binary_matrix_type | binary_vector_type),
+    ".+": scalar_type,
+    ".-": scalar_type,
+    ".*": scalar_type,
+    "./": scalar_type,
 })
 
 var_args = prepare({

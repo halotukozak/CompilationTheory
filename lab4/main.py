@@ -45,7 +45,7 @@ if __name__ == '__main__':
     type_checker = MatrixTypeChecker()
     type_checker.visit_all(result)
 
-    for i, line in errors_and_warnings.items():
+    for i, line in sorted(errors_and_warnings.items()):
         tab = "  " if i < 10 else " " if i < 100 else ""
         print(f"Line {tab}{i}:")
         for level, msg in line:

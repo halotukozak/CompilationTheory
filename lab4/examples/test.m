@@ -87,3 +87,59 @@ dot_operations = A .+ B .- [3, 2, 1];
 
 # Return statement
 return result;
+# Initialize matrices and perform basic operations
+A = [ [1, 2, 3],
+      [4, 5, 6],
+      [7, 8, 9] ];
+B = zeros(3);
+C = eye(3) + ones(3);
+
+# Assigning values and accessing matrix elements
+D = A + B;          # Matrix addition
+D[0, 1] = 10;       # Set element
+x = D[0, 1];        # Access element
+y = D[2, 2] * 5;    # Multiply element
+
+# Loop with a range
+for i = 0:3 {
+    print i;
+    for j = 0:3 {
+        C[i, j] = i * j;
+    }
+}
+
+# Conditional statements
+if (x < 10) {
+    print "x is less than 10";
+} else {
+    print "x is greater or equal to 10";
+}
+
+# Nested loops
+for i = 0:3 {
+    for j = 0:3 {
+        print C[i, j];
+        if (C[i, j] > 5) {
+            break;   # Exit inner loop
+        }
+    }
+}
+
+# Function usage
+M = ones(4) + zeros(4);
+
+# Unary operations
+negA = -A;
+transposeB = B';
+
+# Matrix initialization and print
+G = [ [2.5, 3.1, 4.8],
+      [1.2, 5.6, 6.7],
+      [9.1, 8.3, 7.4] ];
+print G;
+
+# Return example
+return x + y;
+
+a = 1;
+d = -a + 4;

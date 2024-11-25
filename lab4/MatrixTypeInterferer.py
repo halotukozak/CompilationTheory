@@ -74,14 +74,13 @@ class MatrixTypeInterferer:
         self.visit(ref.vector)
 
     def visit_Assign(self, assign: Assign):
+        self.visit(assign.var)
         self.visit(assign.expr)
-        assign.var.type = assign.expr.type
         if isinstance(assign.var, SymbolRef):
+            assign.var.type = assign.expr.type
             symbol = self.get_symbol(assign.var.name)
             if symbol is not None:
                 symbol.type = assign.var.type
-        else:
-            raise NotImplementedError
 
     def visit_Apply(self, apply: Apply):
         self.visit(apply.ref)
@@ -92,30 +91,34 @@ class MatrixTypeInterferer:
 
         ref_name = apply.ref.name
 
-        if ref_name == "INIT":  # or compare symbols?
+        if ref_name == 'INIT':  # or compare symbols?
             self.visit_init(apply)
+        elif ref_name == 'PRINT':
+            pass
         elif isinstance(apply.ref.type, AnyOf):
             res = next(
                 (type_ for type_ in apply.ref.type.all if
                  isinstance(type_, TS.Function) and type_.takes(arg_types)),
                 TS.undef()
             )
+            apply.ref.type = res
             if isinstance(res, TS.undef):
                 # todo:hint possible cases?
                 report_error(self, f"Function {ref_name} with arguments {arg_types} not found", apply.lineno)
-                apply.ref.type = TS.undef()
                 apply.type = TS.undef()
             else:
                 assert isinstance(res, TS.Function)
-                self.visit_predef_apply(apply)
-                apply.ref.type = res
                 apply.type = res.result
+                if not apply.type.is_final:
+                    self.visit_predef_apply(apply)
         elif isinstance(apply.ref.type, TS.Function):
             if not apply.ref.type.takes(arg_types):
                 report_error(self, f"Function {ref_name} with arguments {arg_types} not found", apply.lineno)
                 apply.type = TS.undef()
             else:
-                self.visit_predef_apply(apply)
+                apply.type = apply.ref.type.result
+                if not apply.type.is_final:
+                    self.visit_predef_apply(apply)
         else:
             pass
 
@@ -174,16 +177,19 @@ class MatrixTypeInterferer:
                 assert isinstance(symbol.type, TS.Function)
                 apply.ref = symbol
                 apply.type = symbol.type.result
-            case '+':
+            case '+' | '-':
                 assert len(arg_types) == 2
                 a, b = arg_types
 
-                if a == TS.Int() and b == TS.Int():
-                    apply.type = TS.Int()
-                elif a == TS.numerical and b == TS.numerical:
-                    apply.type = TS.Float()
-                elif isinstance(a, TS.Vector) and isinstance(b, TS.Vector):
-                    apply.type = TS.Vector()
+                if isinstance(a, TS.Vector) and isinstance(b, TS.Vector):
+                    if a.arity == b.arity:
+                        symbol = Predef.get_symbol("BINARY_Vector")(a.arity, ref_name)
+                    else:
+                        report_error(self, f"Vector arities {a.arity} and {b.arity} are not the same", apply.lineno)
+                        symbol = Predef.get_symbol("BINARY_Vector")(None, ref_name)
+                    apply.ref = symbol
+                    assert isinstance(symbol.type, TS.Function)
+                    apply.type = symbol.type.result
                 elif isinstance(a, TS.Matrix) and isinstance(b, TS.Matrix):
                     if a.arity == b.arity:
                         symbol = Predef.get_symbol("BINARY_Matrix")(*a.arity, ref_name)
@@ -193,19 +199,15 @@ class MatrixTypeInterferer:
                     apply.ref = symbol
                     assert isinstance(symbol.type, TS.Function)
                     apply.type = symbol.type.result
+                elif any(arg == TS.numerical for arg in arg_types):
+                    pass
                 else:
                     raise NotImplementedError
             case '*':
                 assert len(arg_types) == 2
                 a, b = arg_types
 
-                if a == TS.Int() and b == TS.Int():
-                    apply.type = TS.Int()
-                elif a == TS.numerical and b == TS.numerical:
-                    apply.type = TS.Float()
-                elif isinstance(a, TS.Vector) and isinstance(b, TS.Vector):
-                    apply.type = TS.Vector()
-                elif isinstance(a, TS.Matrix) and isinstance(b, TS.Matrix):
+                if isinstance(a, TS.Matrix) and isinstance(b, TS.Matrix):
                     if a.arity == b.arity:
                         symbol = Predef.get_symbol("BINARY_Matrix")(*a.arity, ref_name)
                     else:
@@ -215,27 +217,47 @@ class MatrixTypeInterferer:
                     assert isinstance(symbol.type, TS.Function)
                     apply.type = symbol.type.result
                 elif isinstance(a, TS.Vector) and b == TS.numerical:
-                    symbol = Predef.get_symbol("*_Vector")(a.arity, ref_name)
+                    symbol = Predef.get_symbol("SCALAR_Vector")(a.arity, ref_name)
                     apply.ref = symbol
                     assert isinstance(symbol.type, TS.Function)
                     apply.type = symbol.type.result
                 elif isinstance(a, TS.Matrix) and b == TS.numerical:
-                    symbol = Predef.get_symbol("*_Matrix")(*a.arity, ref_name)
+                    symbol = Predef.get_symbol("SCALAR_Matrix")(*a.arity, ref_name)
                     apply.ref = symbol
                     assert isinstance(symbol.type, TS.Function)
                     apply.type = symbol.type.result
+                elif any(arg == TS.numerical for arg in arg_types):
+                    pass
+                else:
+                    raise NotImplementedError
+            case '/':
+                assert len(arg_types) == 2
+                a, b = arg_types
+
+                if isinstance(a, TS.Vector) and b == TS.numerical:
+                    symbol = Predef.get_symbol("SCALAR_Vector")(a.arity, ref_name)
+                    apply.ref = symbol
+                    assert isinstance(symbol.type, TS.Function)
+                    apply.type = symbol.type.result
+                elif isinstance(a, TS.Matrix) and b == TS.numerical:
+                    symbol = Predef.get_symbol("SCALAR_Matrix")(*a.arity, ref_name)
+                    apply.ref = symbol
+                    assert isinstance(symbol.type, TS.Function)
+                    apply.type = symbol.type.result
+                elif any(arg == TS.numerical for arg in arg_types):
+                    pass
                 else:
                     raise NotImplementedError
             case '.+' | '.-' | '.*' | './':
                 assert len(arg_types) == 2
                 a, b = arg_types
 
-                if isinstance(a, TS.Vector) and isinstance(b, TS.numerical):
+                if isinstance(a, TS.Vector) and b == TS.numerical:
                     symbol = Predef.get_symbol("SCALAR_Vector")(a.arity, ref_name)
                     apply.ref = symbol
                     assert isinstance(symbol.type, TS.Function)
                     apply.type = symbol.type.result
-                elif isinstance(a, TS.Matrix) and isinstance(b, TS.Matrix):
+                elif isinstance(a, TS.Matrix) and b == TS.numerical:
                     symbol = Predef.get_symbol("SCALAR_Matrix")(*a.arity, ref_name)
                     apply.ref = symbol
                     assert isinstance(symbol.type, TS.Function)
@@ -245,12 +267,30 @@ class MatrixTypeInterferer:
             case "'":
                 assert len(arg_types) == 1
                 a = arg_types[0]
-                if isinstance(a, TS.Matrix):
-                    symbol = Predef.get_symbol("'_Matrix")(*a.arity, ref_name)
+                assert isinstance(a, TS.Matrix)
+                symbol = Predef.get_symbol("'_Matrix")(*a.arity, ref_name)
+                apply.ref = symbol
+                assert isinstance(symbol.type, TS.Function)
+                apply.type = symbol.type.result
+            case '>' | '<' | '==' | '!=' | '>=' | '<=':
+                assert isinstance(apply.ref.type, TS.Function)
+                apply.type = apply.ref.type.result
+            case 'UMINUS':
+                assert len(arg_types) == 1
+                a = arg_types[0]
+                if isinstance(a, TS.Vector):
+                    symbol = Predef.get_symbol("-_Vector")(a.arity, ref_name)
+                    apply.ref = symbol
+                    assert isinstance(symbol.type, TS.Function)
+                    apply.type = symbol.type.result
+                elif isinstance(a, TS.Matrix):
+                    symbol = Predef.get_symbol("-_Matrix")(*a.arity, ref_name)
                     apply.ref = symbol
                     assert isinstance(symbol.type, TS.Function)
                     apply.type = symbol.type.result
                 else:
                     raise NotImplementedError
+            case 'PRINT':
+                pass
             case _:
                 raise NotImplementedError

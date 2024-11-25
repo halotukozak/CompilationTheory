@@ -3,6 +3,8 @@ from typing import Tuple, Optional
 
 
 class Type:
+    is_final: bool = True
+
     def __eq__(self, other) -> bool:
         if isinstance(other, Any) or isinstance(self, Any):
             return True
@@ -40,18 +42,21 @@ class Type:
 
 
 class undef(Type):
-    pass
+    is_final = False
 
 
 class Any(Type):
-    pass
+    is_final = True
 
 
 class AnyOf(Type):
-    all: set[Type]
+    all: list[Type]
+    is_final = False
 
     def __init__(self, *types: Type):
-        self.all = set(types)
+        super().__init__()
+        seen = set()
+        self.all = [x for x in types if not (x in seen or seen.add(x))]
 
     def __repr__(self):
         return ' | '.join(map(str, self.all))
@@ -71,6 +76,8 @@ class Or(AnyOf):
 class Vector(Type):
     def __init__(self, arity: Optional[int] = None):
         self.arity = arity
+        if arity is None:
+            self.is_final = False
 
     def __str__(self):
         if self.arity:
@@ -85,6 +92,8 @@ class Vector(Type):
 class Matrix(Type):
     def __init__(self, arity: Optional[Tuple[int, int]] = None):
         self.arity = arity
+        if arity is None:
+            self.is_final = False
 
     def __str__(self):
         if self.arity:

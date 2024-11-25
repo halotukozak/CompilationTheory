@@ -6,7 +6,7 @@ errors_and_warnings = defaultdict(lambda: [])
 
 
 def report(message: str, lineno: int, level: str):
-    errors_and_warnings[lineno].append((message, message))
+    errors_and_warnings[lineno].append((level, message))
     if debug:
         print(f"{level} at line {lineno}: {message}")
 
