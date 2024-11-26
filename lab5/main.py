@@ -24,7 +24,7 @@ if __name__ == '__main__':
             sys.exit(0)
 
 
-    Utils.debug = True
+    Utils.debug = False
 
     print_ast = False
 

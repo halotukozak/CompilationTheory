@@ -7,7 +7,7 @@ z = 2.5;
 A = [1, 2, 3];
 B = [4, 5, 6];
 C = [A, B];
-D = C + C;
+D = C .+ C;
 E = C .* C;
 
 # Transpose and scalar operations
@@ -92,10 +92,10 @@ A = [ [1, 2, 3],
       [4, 5, 6],
       [7, 8, 9] ];
 B = zeros(3);
-C = eye(3) + ones(3);
+C = eye(3) .+ ones(3);
 
 # Assigning values and accessing matrix elements
-D = A + B;          # Matrix addition
+D = A .+ B;          # Matrix addition
 D[0, 1] = 10;       # Set element
 x = D[0, 1];        # Access element
 y = D[2, 2] * 5;    # Multiply element
@@ -126,7 +126,7 @@ for i = 0:3 {
 }
 
 # Function usage
-M = ones(4) + zeros(4);
+M = ones(4) .+ zeros(4);
 
 # Unary operations
 negA = -A;
@@ -139,7 +139,4 @@ G = [ [2.5, 3.1, 4.8],
 print G;
 
 # Return example
-return x + y;
-
-a = 1;
-d = -a + 4;
+return x .+ y;

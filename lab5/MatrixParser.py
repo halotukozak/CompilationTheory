@@ -148,7 +148,7 @@ class MatrixParser(Parser):
     def var(self, p: YaccProduction):
         return AST.SymbolRef(p[0], p.lineno, TS.undef())
 
-    # todo maybe can be extracted to binary_operator non-terminal
+    # todo: maybe can be extracted to binary_operator non-terminal
     @_('expr "+" expr',
        'expr "-" expr',
        'expr "*" expr',
@@ -216,4 +216,3 @@ class MatrixParser(Parser):
             report_error(self, f"Syntax error: {p.type}('{p.value}')", p.lineno)
         else:
             report_error(self, "Syntax error", -1)
-

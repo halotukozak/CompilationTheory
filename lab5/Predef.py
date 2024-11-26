@@ -1,7 +1,8 @@
-from typing import Any, Callable
+from typing import Optional
 
-from lab5 import TypeSystem as TS
+from lab5 import TypeSystem as TS, AST
 from lab5.AST import SymbolRef
+from lab5.Result import Result, Warn, Success, Failure
 from lab5.TypeSystem import VarArg, Type
 
 
@@ -11,41 +12,110 @@ def prepare(dict_: dict[str, Type]) -> dict[str, SymbolRef]:
     return {name: SymbolRef(name, None, type_) for name, type_ in dict_.items()}
 
 
-# todo: a lot of obscure (), maybe it can be omitted some way?
-ts_undef = TS.undef()
-ts_float = TS.Float()
-ts_int = TS.Int()
-ts_bool = TS.Bool()
-ts_matrix = TS.Matrix()
-ts_vector = TS.Vector()
+unary_numerical_type = TS.Function(TS.Int(), TS.Int()) | TS.Function(TS.Float(), TS.Float())
+unary_vector_type = TS.Function(TS.Vector(), TS.Vector())
+unary_matrix_type = TS.Function(TS.Matrix(), TS.Matrix())
 
-unary_numerical_type = TS.Function(ts_int, ts_int) | TS.Function(ts_float, ts_float)
-unary_vector_type = TS.Function(ts_vector, ts_vector)
-unary_matrix_type = TS.Function(ts_matrix, ts_matrix)
+binary_numerical_type = TS.Function((TS.Int(), TS.Int()), TS.Int()) \
+                        | TS.Function((TS.numerical(), TS.numerical()), TS.Float())
 
-binary_numerical_type = TS.Function((ts_int, ts_int), ts_int) \
-                        | TS.Function((TS.numerical, TS.numerical), ts_float)
+binary_numerical_condition_type = TS.Function((TS.numerical(), TS.numerical()), TS.Bool())
 
-binary_numerical_condition_type = TS.Function((TS.numerical, TS.numerical), ts_bool)
 
-binary_matrix_type = TS.Function((ts_matrix, ts_matrix), ts_matrix)
-binary_vector_type = TS.Function((ts_vector, ts_vector), ts_vector)
+def binary_metrix_type_factory(first: AST.Expr[TS.Matrix], second: AST.Expr[TS.Matrix]) -> Result[TS.Matrix]:
+    a, b = first.type, second.type
 
-scalar_type = TS.Function((ts_matrix, TS.numerical), ts_matrix) \
-              | TS.Function((ts_vector, TS.numerical), ts_vector)
+    errors = []
+    warns = []
+
+    rows: Optional[int] = None
+    cols: Optional[int] = None
+
+    if a.rows is None or b.rows is None:
+        warns.append("Matrix rows could not be inferred")
+    elif a.rows != b.rows:
+        errors.append(f"Matrix rows mismatch: {a.rows} != {b.rows}")
+    else:
+        rows = a.rows
+
+    if a.cols is None or b.cols is None:
+        warns.append("Matrix columns could not be inferred")
+    elif a.cols != b.cols:
+        errors.append(f"Matrix columns mismatch: {a.cols} != {b.cols}")
+    else:
+        cols = a.cols
+
+    if errors:
+        return Failure(TS.Matrix(rows, cols), "\n".join(errors))
+    elif warns:
+        return Warn(TS.Matrix(rows, cols), "\n".join(warns))
+    else:
+        return Success(TS.Matrix(a.rows, a.cols))
+
+
+def binary_vector_type_factory(first: AST.Expr[TS.Vector], second: AST.Expr[TS.Vector]) -> Result[TS.Vector]:
+    a, b = first.type, second.type
+    if a.arity is None or b.arity is None:
+        return Warn(TS.Vector(), "Vector arity could not be inferred")
+    elif a.arity != b.arity:
+        return Failure(TS.Vector(), f"Vector lengths mismatch: {a.arity} != {b.arity}")
+    else:
+        return Success(TS.Matrix(a.arity, a.arity))
+
+
+binary_matrix_type = TS.FunctionTypeFactory(
+    args=(TS.Matrix(), TS.Matrix()),
+    result_hint=TS.Matrix(),
+    result_type_factory=binary_metrix_type_factory
+)
+
+binary_vector_type = TS.FunctionTypeFactory(
+    args=((TS.Vector()), (TS.Vector())),
+    result_hint=(TS.Vector()),
+    result_type_factory=binary_vector_type_factory
+)
+
+scalar_type = TS.FunctionTypeFactory(
+    args=(TS.Matrix(), TS.numerical()),
+    result_hint=TS.Matrix(),
+    result_type_factory=lambda expr, args: Success(expr.type)
+) | TS.FunctionTypeFactory(
+    args=(TS.Vector(), TS.numerical()),
+    result_hint=TS.Vector(),
+    result_type_factory=lambda expr, args: Success(expr.type)
+)
+
+
+def matrix_create_function_type(size: AST.Expr[TS.Int]) -> Result[TS.Type]:
+    match size:
+        case AST.Literal(n):
+            return Success(TS.Matrix(n, n))
+        case _:
+            return Warn(TS.Matrix(), "Matrix size could not be inferred")
+
+
+matrix_type = TS.FunctionTypeFactory(
+    args=TS.Int(),
+    result_hint=TS.Matrix(),
+    result_type_factory=matrix_create_function_type
+)
 
 unary = prepare({
     "UMINUS": unary_numerical_type | unary_vector_type | unary_matrix_type,
-    "'": TS.Function(ts_matrix, ts_matrix) | TS.Function(ts_vector, ts_vector),
-    "eye": TS.Function(ts_int, ts_matrix),
-    "zeros": TS.Function(ts_int, ts_matrix),
-    "ones": TS.Function(ts_int, ts_matrix),
+    "'": TS.FunctionTypeFactory(
+        args=(TS.Matrix()),
+        result_hint=(TS.Matrix()),
+        result_type_factory=lambda expr: Success(TS.Matrix(expr.type.cols, expr.type.rows))
+    ),
+    "eye": matrix_type,
+    "zeros": matrix_type,
+    "ones": matrix_type,
 })
 
 binary = prepare({
     "+": binary_numerical_type,
     "-": binary_numerical_type,
-    "*": binary_numerical_type | scalar_type,
+    "*": binary_numerical_type | scalar_type | binary_matrix_type,
     "/": binary_numerical_type | scalar_type,
     "==": binary_numerical_condition_type,
     "!=": binary_numerical_condition_type,
@@ -53,104 +123,43 @@ binary = prepare({
     ">=": binary_numerical_condition_type,
     ">": binary_numerical_condition_type,
     "<": binary_numerical_condition_type,
-    ".+": binary_matrix_type,
-    ".-": binary_matrix_type,
-    ".*": binary_matrix_type,
-    "./": binary_matrix_type,
+    ".+": binary_matrix_type | binary_vector_type,
+    ".-": binary_matrix_type | binary_vector_type,
+    ".*": binary_matrix_type | binary_vector_type,
+    "./": binary_matrix_type | binary_vector_type,
 })
 
+
+def init_vector_factory(*args: AST.Expr[TS.Vector]) -> Result[TS.Type]:
+    # assert all(isinstance(arg, TS.Vector) for arg in arg_types)
+    arities = set(arg.type.arity for arg in args)
+    if len(arities) == 1:
+        return Success(TS.Matrix(len(args), arities.pop()))
+    else:
+        if None not in arities:
+            return Warn(TS.Matrix(len(args)), f"Vector arities {arities} are not the same")
+        return Warn(TS.Matrix(), "Cannot infer matrix size")
+
+
 var_args = prepare({
-    "INIT": TS.Function(VarArg(TS.numerical), ts_vector) |
-            TS.Function(VarArg(ts_vector), ts_matrix),
+    "INIT": TS.FunctionTypeFactory(
+        args=VarArg(TS.numerical()),
+        result_hint=TS.Vector(),
+        result_type_factory=lambda *args: Success(TS.Vector(len(args)))
+    ) | TS.FunctionTypeFactory(
+        args=VarArg(TS.Vector()),
+        result_hint=TS.Matrix(),
+        result_type_factory=init_vector_factory
+    ),
+
     "PRINT": TS.Function(VarArg(TS.Any()), TS.unit()),
 })
 
-init_callables = {
-    "INIT_VECTOR": lambda n: SymbolRef(
-        "INIT_VECTOR",
-        None,
-        TS.Function(VarArg(TS.numerical), TS.Vector(n))
-    ),
-    "INIT_MATRIX": lambda n, m: SymbolRef(
-        "INIT_MATRIX",
-        None,
-        TS.Function(VarArg(TS.Vector(m)), TS.Matrix((n, m)))
-    ),
-}
-
-vector_callables = {
-    "-_Vector": lambda n, sym: SymbolRef(
-        f"{sym}_Vector",
-        None,
-        TS.Function(TS.Vector(n), TS.Vector(n))
-    ),
-    "'_Vector": lambda n, sym: SymbolRef(
-        f"{sym}_Vector",
-        None,
-        TS.Function(TS.Vector(n), TS.Vector(n))
-    ),
-    "BINARY_Vector": lambda n, sym: SymbolRef(
-        f"{sym}_Vector",
-        None,
-        TS.Function((TS.Vector(n), TS.Vector(n)), TS.Vector(n))
-    ),
-    "SCALAR_Vector": lambda n, sym: SymbolRef(
-        f"{sym}_Vector",
-        None,
-        TS.Function((TS.Vector(n), TS.numerical), TS.Vector(n))
-    ),
-}
-
-matrix_callables = {
-    "-_Matrix": lambda n, m, sym: SymbolRef(
-        f"{sym}_Metrix",
-        None,
-        TS.Function(TS.Matrix((n, m)), TS.Matrix((n, m)))
-    ),
-    "'_Matrix": lambda n, m, sym: SymbolRef(
-        "'_Metrix",
-        None,
-        TS.Function(TS.Matrix((n, m)), TS.Matrix((m, n)))
-    ),
-    "BINARY_Matrix": lambda n, m, sym: SymbolRef(
-        f"{sym}_Matrix",
-        None,
-        TS.Function((TS.Matrix((n, m)), TS.Matrix((n, m))), TS.Matrix((n, m)))
-    ),
-    "SCALAR_Matrix": lambda n, m, sym: SymbolRef(
-        f"{sym}_Matrix",
-        None,
-        TS.Function((TS.Matrix((n, m)), TS.numerical), TS.Matrix((n, m)))
-    ),
-    "*_Matrix": lambda n, m, p, sym: SymbolRef(
-        f"*_Matrix",
-        None,
-        TS.Function((TS.Matrix((n, m)), TS.Matrix((m, p))), TS.Matrix((n, p)))
-    ),
-    "ones_Matrix": lambda n: SymbolRef(
-        "ones_Matrix",
-        None,
-        TS.Function(ts_int, TS.Matrix((n, n)))
-    ),
-    "zeros_Matrix": lambda n: SymbolRef(
-        "zeros_Matrix",
-        None,
-        TS.Function(ts_int, TS.Matrix((n, n)))
-    ),
-    "eye_Matrix": lambda n: SymbolRef(
-        "eye_Matrix",
-        None,
-        TS.Function(ts_int, TS.Matrix((n, n)))
-    ),
-}
-
-callables = {**init_callables, **vector_callables, **matrix_callables}
-
-symbols = {**unary, **binary, **var_args, **callables}
+symbols = {**unary, **binary, **var_args}
 
 
 # todo: maybe split into two functions?
-def get_symbol(name: str) -> SymbolRef | Callable[[Any], SymbolRef]:
+def get_symbol(name: str):
     res = symbols[name]
     if isinstance(res, SymbolRef):
         return res.copy()

@@ -1,5 +1,8 @@
+import typing
 from dataclasses import dataclass
 from typing import Tuple, Optional
+
+from lab5.Result import Result
 
 
 class Type:
@@ -17,10 +20,10 @@ class Type:
         else:
             return type(self) == type(other)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return type(self).__name__
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return type(self).__name__
 
     def __or__(self, other):
@@ -77,6 +80,8 @@ class Or(AnyOf):
         super().__init__(left, right)
 
 
+# arity has no meaning in equality!
+# todo: vector should be a metrix with 1 column/row
 class Vector(Type):
     def __init__(self, arity: Optional[int] = None):
         self.arity = arity
@@ -84,7 +89,7 @@ class Vector(Type):
             self.is_final = False
 
     def __str__(self):
-        if self.arity:
+        if self.arity is not None:
             return f"Vector[{self.arity}]"
         else:
             return f"Vector[?]"
@@ -93,34 +98,47 @@ class Vector(Type):
         return self.__str__()
 
 
+# arity has no meaning in equality!
 class Matrix(Type):
-    def __init__(self, arity: Optional[Tuple[int, int]] = None):
-        self.arity = arity
-        if arity is None:
+    def __init__(self, rows: Optional[int] = None, cols: Optional[int] = None):
+        self.rows = rows
+        self.cols = cols
+        if not self.rows or not self.cols:
             self.is_final = False
 
     def __str__(self):
-        if self.arity:
-            return f"Matrix{list(self.arity)}"
-        else:
-            return f"Matrix[?]"
+        match self.arity:
+            case (None, None):
+                return "Matrix[?, ?]"
+            case (None, b):
+                return f"Matrix[?, {b}]"
+            case (a, None):
+                return f"Matrix[{a}, ?]"
+            case (a, b):
+                return f"Matrix[{a}, {b}]"
 
     def __repr__(self):
         return self.__str__()
 
+    @property
+    def arity(self):
+        return self.rows, self.cols
 
-@dataclass(repr=False)
+
+@dataclass
 class VarArg(Type):
     type: Type
 
-    def __repr__(self):
+    def __str__(self):
         return f"({self.type})*"
+
+    def __repr__(self):
+        return self.__str__()
 
     def __hash__(self):
         return hash(repr(self))
 
 
-@dataclass(init=False, unsafe_hash=True)
 class Function(Type):
     args: None | Type | Tuple[Type, ...] | VarArg
     arity: Optional[int]
@@ -141,6 +159,9 @@ class Function(Type):
     def __str__(self):
         return f"({self.args}) -> {self.result}"
 
+    def __repr__(self):
+        return self.__str__()
+
     def takes(self, args: list[Type]) -> bool:
         if self.args is None:
             return not args
@@ -152,6 +173,24 @@ class Function(Type):
             return len(self.args) == len(args) and all(a == b for a, b in zip(self.args, args))
         else:
             return False
+
+
+class FunctionTypeFactory(Function):
+    is_final = False
+
+    def __init__(self, args: None | Type | Tuple[Type, ...] | VarArg, result_hint: Type,
+                 result_type_factory: typing.Callable[..., Result[Type]]):
+        super().__init__(args, result_hint)
+        self.result_type_factory = result_type_factory
+
+    def __call__(self, args: list) -> Result[Type]:
+        return self.result_type_factory(*args).map(lambda res: Function(self.args, res))
+
+    def __str__(self):
+        return f"TypeFunction: ({self.args}) -> {self.args}"  # todo: sth more informative
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class Int(Type):
@@ -170,4 +209,5 @@ class Bool(Type):
     pass
 
 
-numerical = Int() | Float()
+def numerical() -> Type:
+    return Int() | Float()
