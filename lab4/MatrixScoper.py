@@ -154,9 +154,9 @@ class MatrixScoper:
         self.visit(range_.start)
         self.visit(range_.end)
         if isinstance(range_.start, SymbolRef) and range_.start.type != TS.Int():
-            raise NotImplementedError
+            report_error(self, f"Expected Int, got {range_.start.type}", range_.lineno)
         if isinstance(range_.end, SymbolRef) and range_.end.type != TS.Int():
-            raise NotImplementedError
+            report_error(self, f"Expected Int, got {range_.end.type}", range_.lineno)
 
     def visit_Literal(self, literal: Literal):
         pass
