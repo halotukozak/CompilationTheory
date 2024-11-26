@@ -5,8 +5,8 @@ from lab5.MatrixParser import MatrixParser
 from lab5.MatrixScanner import MatrixScanner
 from lab5.MatrixScoper import MatrixScoper
 from lab5.MatrixTypeChecker import MatrixTypeChecker
-from lab5.Utils import print_errors_and_warnings
 from lab5.TreePrinter import TreePrinter
+from lab5.Utils import print_errors_and_warnings
 
 if __name__ == '__main__':
     name = "examples/test.m"
@@ -23,7 +23,8 @@ if __name__ == '__main__':
             print_errors_and_warnings()
             sys.exit(0)
 
-    Utils.debug = False
+
+    Utils.debug = True
 
     print_ast = False
 

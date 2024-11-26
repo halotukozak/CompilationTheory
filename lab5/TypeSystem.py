@@ -44,6 +44,7 @@ class Type:
 class undef(Type):
     is_final = False
 
+
 class unit(Type):
     is_final = True
 

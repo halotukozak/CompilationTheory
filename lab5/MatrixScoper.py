@@ -210,12 +210,21 @@ class MatrixScoper:
                     apply.ref = Predef.get_symbol("SCALAR_Matrix")(*a.arity, ref_name)
                 else:
                     raise NotImplementedError
-            case '/' | '.+' | '.-' | '.*' | './':
+            case '/':
                 a, b = arg_types
 
                 if isinstance(a, TS.Vector) and b == TS.numerical:
                     apply.ref = Predef.get_symbol("SCALAR_Vector")(a.arity, ref_name)
                 elif isinstance(a, TS.Matrix) and b == TS.numerical:
+                    apply.ref = Predef.get_symbol("SCALAR_Matrix")(*a.arity, ref_name)
+                else:
+                    raise NotImplementedError
+            case '.+' | '.-' | '.*' | './':
+                a, b = arg_types
+
+                if isinstance(a, TS.Vector) and isinstance(a, TS.Vector):
+                    apply.ref = Predef.get_symbol("SCALAR_Vector")(a.arity, ref_name)
+                elif isinstance(a, TS.Matrix) and b == isinstance(a, TS.Matrix):
                     apply.ref = Predef.get_symbol("SCALAR_Matrix")(*a.arity, ref_name)
                 else:
                     raise NotImplementedError

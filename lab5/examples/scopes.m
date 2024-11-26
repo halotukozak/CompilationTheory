@@ -7,7 +7,7 @@ while (x <= 0) {
   undef_outside_scope = x;
 }
 
-while (undef <= 0) {
+while (uuu <= 0) {
   undef_outside_scope = undef;
 }
 

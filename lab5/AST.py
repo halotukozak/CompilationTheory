@@ -32,6 +32,7 @@ class Tree:
 class Statement(Tree):
     pass
 
+
 # synthetic tree node to represent a block of statements
 @dataclass
 class Block(Tree):
@@ -39,6 +40,7 @@ class Block(Tree):
 
     def __iter__(self):
         return iter(self.statements)
+
 
 class Def(Statement):
     pass

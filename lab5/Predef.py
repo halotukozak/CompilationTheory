@@ -7,21 +7,6 @@ from lab5.TypeSystem import VarArg, Type
 
 # these dictionaries should be more generic, but there is so much boilerplate in the code
 
-def parse_result(type_: Type) -> Type:
-    if isinstance(type_, TS.Function):
-        return type_.result
-    elif isinstance(type_, TS.AnyOf):
-        res = set()
-        for t in type_.all:
-            if isinstance(t, TS.Function):
-                res.add(t.result)
-            else:
-                res.add(t)
-        return TS.AnyOf(*res)
-    else:
-        return type_
-
-
 def prepare(dict_: dict[str, Type]) -> dict[str, SymbolRef]:
     return {name: SymbolRef(name, None, type_) for name, type_ in dict_.items()}
 
@@ -58,20 +43,20 @@ unary = prepare({
 })
 
 binary = prepare({
-    "+": binary_numerical_type | binary_matrix_type | binary_vector_type,
-    "-": binary_numerical_type | binary_matrix_type | binary_vector_type,
-    "*": binary_numerical_type | binary_matrix_type | binary_vector_type | scalar_type,
-    "/": binary_numerical_type | binary_matrix_type | binary_vector_type | scalar_type,
+    "+": binary_numerical_type,
+    "-": binary_numerical_type,
+    "*": binary_numerical_type | scalar_type,
+    "/": binary_numerical_type | scalar_type,
     "==": binary_numerical_condition_type,
     "!=": binary_numerical_condition_type,
     "<=": binary_numerical_condition_type,
     ">=": binary_numerical_condition_type,
     ">": binary_numerical_condition_type,
     "<": binary_numerical_condition_type,
-    ".+": scalar_type,
-    ".-": scalar_type,
-    ".*": scalar_type,
-    "./": scalar_type,
+    ".+": binary_matrix_type,
+    ".-": binary_matrix_type,
+    ".*": binary_matrix_type,
+    "./": binary_matrix_type,
 })
 
 var_args = prepare({
