@@ -1,5 +1,5 @@
-from lab5.AST import *
-from lab5.Utils import report_error, report_warn
+from AST import *
+from Utils import report_error, report_warn
 
 
 class MatrixTypeChecker:

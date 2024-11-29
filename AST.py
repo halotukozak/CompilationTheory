@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Optional, TypeVar
 
-from lab5 import TypeSystem as TS
+import TypeSystem as TS
 
 
 # +- Tree -+- Statement -+

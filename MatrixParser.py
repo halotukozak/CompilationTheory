@@ -1,11 +1,11 @@
 from sly import Parser
 from sly.yacc import YaccProduction
 
-from lab5 import AST
-from lab5 import Predef
-from lab5 import TypeSystem as TS
-from lab5.MatrixScanner import MatrixScanner
-from lab5.Utils import report_error
+import AST
+import Predef
+import TypeSystem as TS
+from MatrixScanner import MatrixScanner
+from Utils import report_error
 
 
 # noinspection PyUnresolvedReferences

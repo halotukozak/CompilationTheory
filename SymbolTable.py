@@ -1,7 +1,7 @@
 from typing import Optional, Any
 
-from lab5 import Predef
-from lab5.AST import SymbolRef
+import Predef
+from AST import SymbolRef
 
 
 class GlobalMarker(object):

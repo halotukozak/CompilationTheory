@@ -1,9 +1,9 @@
-from lab5 import AST
-from lab5.AST import *
-from lab5.Result import Success, Warn, Failure, Result
-from lab5.SymbolTable import SymbolTable
-from lab5.TypeSystem import AnyOf
-from lab5.Utils import report_error, report_warn
+import AST
+from AST import *
+from Result import Success, Warn, Failure, Result
+from SymbolTable import SymbolTable
+from TypeSystem import AnyOf
+from Utils import report_error, report_warn
 
 
 class MatrixScoper:

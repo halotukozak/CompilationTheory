@@ -2,7 +2,7 @@ import typing
 from dataclasses import dataclass
 from typing import Tuple, Optional
 
-from lab5.Result import Result
+from Result import Result
 
 
 class Type:

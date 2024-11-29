@@ -1,9 +1,10 @@
 from typing import Optional
 
-from lab5 import TypeSystem as TS, AST
-from lab5.AST import SymbolRef
-from lab5.Result import Result, Warn, Success, Failure
-from lab5.TypeSystem import VarArg, Type
+import AST
+import TypeSystem as TS
+from AST import SymbolRef
+from Result import Result, Warn, Success, Failure
+from TypeSystem import VarArg, Type
 
 
 # these dictionaries should be more generic, but there is so much boilerplate in the code

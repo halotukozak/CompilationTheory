@@ -1,12 +1,12 @@
 import sys
 
-from lab5 import Utils
-from lab5.MatrixParser import MatrixParser
-from lab5.MatrixScanner import MatrixScanner
-from lab5.MatrixScoper import MatrixScoper
-from lab5.MatrixTypeChecker import MatrixTypeChecker
-from lab5.TreePrinter import TreePrinter
-from lab5.Utils import print_errors_and_warnings
+import Utils
+from MatrixParser import MatrixParser
+from MatrixScanner import MatrixScanner
+from MatrixScoper import MatrixScoper
+from MatrixTypeChecker import MatrixTypeChecker
+from TreePrinter import TreePrinter
+from Utils import print_errors_and_warnings
 
 if __name__ == '__main__':
     name = "examples/test.m"

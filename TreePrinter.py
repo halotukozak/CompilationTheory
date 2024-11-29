@@ -1,5 +1,5 @@
-from lab5.AST import *
-from lab5.Utils import addToClass
+from AST import *
+from Utils import addToClass
 
 
 class TreePrinter:

@@ -1,6 +1,6 @@
 from sly import Lexer
 
-from lab5.Utils import report_error
+from Utils import report_error
 
 
 # noinspection PyUnresolvedReferences,PyUnboundLocalVariable
