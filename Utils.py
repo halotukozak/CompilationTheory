@@ -4,7 +4,6 @@ debug: bool
 
 errors_and_warnings = defaultdict(lambda: [])
 
-
 def report(message: str, lineno: int, level: str):
     errors_and_warnings[lineno].append((level, message))
     if debug:
@@ -37,8 +36,6 @@ def addToClass(cls):
 
 
 import inspect
-
-__all__ = ['on', 'when']
 
 def on(param_name):
     def f(fn):

@@ -9,7 +9,8 @@ class MatrixTypeChecker:
         visitor = getattr(self, method, self.generic_visit)
         return visitor(node)
 
-    def generic_visit(self, node):
+    @staticmethod
+    def generic_visit(node):
         print(f"No visit_{node.__class__.__name__} method")
 
     def visit_all(self, tree: list[Statement]):

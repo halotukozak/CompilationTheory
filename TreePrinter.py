@@ -52,6 +52,7 @@ class TreePrinter:
 
     @addToClass(Apply)
     def print_tree(self: Apply, indent_level=0):
+        assert isinstance(self.ref, SymbolRef)
         print("|  " * indent_level + f"{self.ref.name}")
         print("|  " * (indent_level + 1) + "ARGUMENTS")
         for arg in self.args:
@@ -99,6 +100,7 @@ class TreePrinter:
         print("|  " * indent_level + "RETURN")
         TreePrinter.safe_print_tree(self.expr, indent_level + 1)
 
-    def print_result(self, result):
+    @staticmethod
+    def print_result(result):
         for r in result:
             r.print_tree()
