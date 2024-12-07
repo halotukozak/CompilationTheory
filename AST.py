@@ -92,8 +92,8 @@ class SymbolRef[T](Ref[T]):
 
 
 @dataclass(init=False)
-class VectorRef(Ref[TS.Vector]):
-    vector: SymbolRef
+class VectorRef(Ref[TS.numerical()]):
+    vector: SymbolRef[TS.Vector]
     element: Expr[TS.Int]
 
     def __init__(self, vector: SymbolRef, element: Expr[TS.Int], lineno: int):
@@ -103,8 +103,8 @@ class VectorRef(Ref[TS.Vector]):
 
 
 @dataclass(init=False)
-class MatrixRef(Ref):
-    matrix: SymbolRef
+class MatrixRef(Ref[TS.numerical()]):
+    matrix: SymbolRef[TS.Matrix]
     row: Expr[TS.Int]
     col: Expr[TS.Int]
 

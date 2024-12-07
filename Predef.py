@@ -7,15 +7,21 @@ from Result import Result, Warn, Success, Failure
 from TypeSystem import VarArg, Type
 
 
-# these dictionaries should be more generic, but there is so much boilerplate in the code
-
 def prepare(dict_: dict[str, Type]) -> dict[str, SymbolRef]:
     return {name: SymbolRef(name, None, type_) for name, type_ in dict_.items()}
 
 
 unary_numerical_type = TS.Function(TS.Int(), TS.Int()) | TS.Function(TS.Float(), TS.Float())
-unary_vector_type = TS.Function(TS.Vector(), TS.Vector())
-unary_matrix_type = TS.Function(TS.Matrix(), TS.Matrix())
+unary_vector_type = TS.FunctionTypeFactory(
+    args=TS.Vector(),
+    result_hint=TS.Vector(),
+    result_type_factory=lambda expr: Success(expr.type)
+)
+unary_matrix_type = TS.FunctionTypeFactory(
+    args=TS.Matrix(),
+    result_hint=TS.Matrix(),
+    result_type_factory=lambda expr: Success(expr.type)
+)
 
 binary_numerical_type = TS.Function((TS.Int(), TS.Int()), TS.Int()) \
                         | TS.Function((TS.numerical(), TS.numerical()), TS.Float())
@@ -116,7 +122,7 @@ unary = prepare({
 binary = prepare({
     "+": binary_numerical_type,
     "-": binary_numerical_type,
-    "*": binary_numerical_type | scalar_type | binary_matrix_type,
+    "*": binary_numerical_type | scalar_type | binary_matrix_type | TS.Function((TS.String(), TS.Int()), TS.String()) ,
     "/": binary_numerical_type | scalar_type,
     "==": binary_numerical_condition_type,
     "!=": binary_numerical_condition_type,

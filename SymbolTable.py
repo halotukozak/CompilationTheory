@@ -14,7 +14,7 @@ class SymbolTable(object):
         children: dict[str, 'Scope'] = {}
 
         def __init__(self, parent: 'Scope', key: int | GlobalMarker, in_loop: Optional[bool]):
-            self.parent = parent  # :Scope
+            self.parent = parent
             self.key = key
             if in_loop is not None:
                 self.in_loop = in_loop

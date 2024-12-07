@@ -166,20 +166,19 @@ class MatrixParser(Parser):
 
     @_('INTNUM')
     def expr(self, p: YaccProduction):
-        return AST.Literal.int(p[0], p.lineno)
+        return AST.Literal.int(p.INTNUM, p.lineno)
 
     @_('FLOAT')
     def expr(self, p: YaccProduction):
-        return AST.Literal.float(p[0], p.lineno)
+        return AST.Literal.float(p.FLOAT, p.lineno)
 
     @_('STRING')
     def expr(self, p: YaccProduction):
-        return AST.Literal.string(p[0], p.lineno)
+        return AST.Literal.string(p.STRING[1: -1], p.lineno)
 
     @_('"-" expr %prec UMINUS')
     def expr(self, p: YaccProduction):
-        args = [p.expr]
-        return AST.Apply(Predef.get_symbol("UMINUS"), args, p.lineno)
+        return AST.Apply(Predef.get_symbol("UMINUS"), [p.expr], p.lineno)
 
     @_('expr "\'"')
     def expr(self, p: YaccProduction):

@@ -1,6 +1,7 @@
 import sys
 
 import Utils
+from Interpreter import MatrixInterpreter
 from MatrixParser import MatrixParser
 from MatrixScanner import MatrixScanner
 from MatrixScoper import MatrixScoper
@@ -48,3 +49,7 @@ if __name__ == '__main__':
     type_checker.visit_all(ast)
     # print(ast)
     quit_if_failed(type_checker)
+
+    interpreter = MatrixInterpreter()
+    interpreter.eval_all(ast)
+

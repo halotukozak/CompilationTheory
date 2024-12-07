@@ -162,6 +162,12 @@ class Function(Type):
     def __repr__(self):
         return self.__str__()
 
+    def __eq__(self, other):
+        return type(self) == type(other) and self.args == other.args and self.result == other.result
+
+    def __hash__(self):
+        return hash(repr(self))
+
     def takes(self, args: list[Type]) -> bool:
         if self.args is None:
             return not args
@@ -187,10 +193,16 @@ class FunctionTypeFactory(Function):
         return self.result_type_factory(*args).map(lambda res: Function(self.args, res))
 
     def __str__(self):
-        return f"TypeFunction: ({self.args}) -> {self.args}"  # todo: sth more informative
+        return f"TypeFunction: [{hash(self.result_type_factory)}] => {self.args} -> {self.result}"  # todo: sth more informative
 
     def __repr__(self):
         return self.__str__()
+
+    def __eq__(self, other) -> bool:
+        return type(self) == type(other) and self.result_type_factory == other.result_type_factory
+
+    def __hash__(self):
+        return hash(repr(self))
 
 
 class Int(Type):
