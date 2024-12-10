@@ -10,7 +10,7 @@ from TreePrinter import TreePrinter
 from Utils import print_errors_and_warnings
 
 if __name__ == '__main__':
-    name = "examples/sqrt.m"
+    name = "examples/matrix.m"
     filename = sys.argv[1] if len(sys.argv) > 1 else name
     try:
         file = open(filename, "r")

@@ -2,14 +2,35 @@ from typing import Optional, Callable
 
 
 class Vector:
-    def __init__(self, source: list[int]):
+    def __init__(self, source: list[int | float]):
         self.source = source
 
-    def __setitem__(self, index: int, value: int):
+    def __setitem__(self, index: int, value: int | float):
         self.source[index] = value
 
-    def __getitem__(self, index: int) -> int:
+    def __getitem__(self, index: int) -> int | float:
         return self.source[index]
+
+    def __iter__(self):
+        return iter(self.source)
+
+    def __add__(self, other: 'Vector'):
+        return Vector([v + w for v, w in zip(self, other)])
+
+    def __sub__(self, other: 'Vector'):
+        return Vector([v - w for v, w in zip(self, other)])
+
+    def __mul__(self, other: 'Vector'):
+        return Vector([v * w for v, w in zip(self, other)])
+
+    def __truediv__(self, other: 'Vector'):
+        return Vector([v / w for v, w in zip(self, other)])
+
+    def __str__(self):
+        return str(self.source)
+
+    def __repr__(self):
+        return str(self.source)
 
 
 class Matrix:
@@ -21,6 +42,24 @@ class Matrix:
 
     def __getitem__(self, row: int) -> Vector:
         return self.source[row]
+
+    def __add__(self, other: 'Matrix'):
+        return Matrix([v + w for v, w in zip(self.source, other.source)])
+
+    def __sub__(self, other: 'Matrix'):
+        return Matrix([v - w for v, w in zip(self.source, other.source)])
+
+    def __mul__(self, other: 'Matrix'):
+        return Matrix([v * w for v, w in zip(self.source, other.source)])
+
+    def __truediv__(self, other: 'Matrix'):
+        return Matrix([v / w for v, w in zip(self.source, other.source)])
+
+    def __str__(self):
+        return str(self.source)
+
+    def __repr__(self):
+        return repr(self.source)
 
 
 class Env(object):
@@ -66,8 +105,8 @@ class EnvTable(object):
         '*': lambda a, b: a * b,
         '/': lambda a, b: a / b,
         'PRINT': lambda *args: print(*args),
-        'zeros': lambda n: Matrix([[0] * n] * n),
-        'ones': lambda n: Matrix([[1] * n] * n),
+        'zeros': lambda n: Matrix([[0] * n for _ in range(n)]),
+        'ones': lambda n: Matrix([[1] * n for _ in range(n)]),
         'eye': lambda n: Matrix([Vector([1 if i == j else 0 for j in range(n)]) for i in range(n)]),
         'INIT': init_lambda,
         '==': lambda a, b: a == b,
@@ -76,6 +115,10 @@ class EnvTable(object):
         '>=': lambda a, b: a >= b,
         '<': lambda a, b: a < b,
         '>': lambda a, b: a > b,
+        '.+': lambda a, b: a + b,
+        '.-': lambda a, b: a - b,
+        '.*': lambda a, b: a * b,
+        './': lambda a, b: a / b,
     }
 
     actual_env = global_env
