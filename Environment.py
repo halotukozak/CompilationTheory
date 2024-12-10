@@ -76,7 +76,6 @@ class EnvTable(object):
         '>=': lambda a, b: a >= b,
         '<': lambda a, b: a < b,
         '>': lambda a, b: a > b,
-
     }
 
     actual_env = global_env

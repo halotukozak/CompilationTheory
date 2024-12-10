@@ -132,7 +132,7 @@ class MatrixInterpreter:
 
     @when(Return)
     def eval(self, return_: Return):
-        raise NotImplementedError
+        return self.eval(return_)
 
     @when(Block)
     def eval(self, block: Block):
