@@ -1,4 +1,6 @@
-from sly import Parser
+# mypy: disable-error-code="name-defined, no-redef, no-untyped-def"
+
+from sly import Parser  # type: ignore
 from sly.yacc import YaccProduction
 
 import AST

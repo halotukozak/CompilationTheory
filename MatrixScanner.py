@@ -1,4 +1,6 @@
+# mypy: disable-error-code="name-defined,index"
 from sly import Lexer
+from sly.lex import Token
 
 from Utils import report_error
 
@@ -67,9 +69,9 @@ class MatrixScanner(Lexer):
     ignore_comment = r'\#.*'
 
     @_(r'\n+')
-    def ignore_newline(self, t):
+    def ignore_newline(self, t: Token) -> None:
         self.lineno += len(t.value)
 
-    def error(self, t):
+    def error(self, t: Token) -> None:
         report_error(self, f"Illegal character '{t.value[0]}'", self.lineno)
         self.index += 1

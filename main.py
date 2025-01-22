@@ -19,7 +19,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
 
-    def quit_if_failed(self):
+    def quit_if_failed(self: object) -> None:
         if getattr(self, 'failed', False):
             print_errors_and_warnings()
             sys.exit(0)
@@ -52,4 +52,3 @@ if __name__ == '__main__':
 
     interpreter = MatrixInterpreter()
     interpreter.eval_all(ast)
-

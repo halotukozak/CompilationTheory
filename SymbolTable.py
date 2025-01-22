@@ -4,16 +4,16 @@ import Predef
 from AST import SymbolRef
 
 
-class GlobalMarker(object):
+class GlobalMarker:
     pass
 
 
-class SymbolTable(object):
-    class Scope(object):
+class SymbolTable:
+    class Scope:
         symbols: dict[str, SymbolRef] = {}
-        children: dict[str, 'Scope'] = {}
+        children: dict[int, 'Scope'] = {}  # type: ignore
 
-        def __init__(self, parent: 'Scope', key: int | GlobalMarker, in_loop: Optional[bool]):
+        def __init__(self, parent: 'Scope', key: int | GlobalMarker, in_loop: Optional[bool]):  # type: ignore
             self.parent = parent
             self.key = key
             if in_loop is not None:
@@ -34,10 +34,10 @@ class SymbolTable(object):
 
     actual_scope = global_scope
 
-    def push_scope(self, name: Any):
+    def push_scope(self, name: Any) -> None:
         self.actual_scope = self.actual_scope.children[id(name)]
 
-    def pop_scope(self):
+    def pop_scope(self) -> None:
         self.actual_scope = self.actual_scope.parent
 
     def get_symbol(self, name: str) -> Optional[SymbolRef]:

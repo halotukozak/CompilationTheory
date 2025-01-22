@@ -1,8 +1,11 @@
+# mypy: disable-error-code="no-untyped-def"
+
 from collections import defaultdict
 
 debug: bool
 
-errors_and_warnings = defaultdict(lambda: [])
+errors_and_warnings: dict[int, list] = defaultdict(lambda: [])
+
 
 def report(message: str, lineno: int, level: str):
     errors_and_warnings[lineno].append((level, message))
@@ -36,6 +39,7 @@ def addToClass(cls):
 
 
 import inspect
+
 
 def on(param_name):
     def f(fn):

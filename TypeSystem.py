@@ -1,6 +1,5 @@
-import typing
 from dataclasses import dataclass
-from typing import Tuple, Optional
+from typing import Optional, Iterator, Tuple, Callable
 
 from Result import Result
 
@@ -8,12 +7,12 @@ from Result import Result
 class Type:
     is_final: bool = True
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Any) or isinstance(self, Any):
             return True
         elif isinstance(other, AnyOf) and isinstance(self, AnyOf):
             return set(self.all).intersection(other.all) != set()
-        elif isinstance(self, AnyOf):
+        elif isinstance(self, AnyOf) and isinstance(other, Type):
             return other in self
         elif isinstance(other, AnyOf):
             return self in other
@@ -26,7 +25,7 @@ class Type:
     def __repr__(self) -> str:
         return type(self).__name__
 
-    def __or__(self, other):
+    def __or__(self, other: 'Type') -> 'Type':
         if isinstance(other, Any) or isinstance(self, Any):
             return Any()
         elif isinstance(other, AnyOf) and isinstance(self, AnyOf):
@@ -40,7 +39,7 @@ class Type:
         else:
             return Or(self, other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(repr(self))
 
 
@@ -62,16 +61,15 @@ class AnyOf(Type):
 
     def __init__(self, *types: Type):
         super().__init__()
-        seen = set()
-        self.all = [x for x in types if not (x in seen or seen.add(x))]
+        self.all = list(set(types))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return ' | '.join(map(str, self.all))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return ' | '.join(map(str, self.all))
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Type]:
         return iter(self.all)
 
 
@@ -88,13 +86,13 @@ class Vector(Type):
         if arity is None:
             self.is_final = False
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.arity is not None:
             return f"Vector[{self.arity}]"
         else:
             return f"Vector[?]"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
 
@@ -106,7 +104,7 @@ class Matrix(Type):
         if not self.rows or not self.cols:
             self.is_final = False
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self.arity:
             case (None, None):
                 return "Matrix[?, ?]"
@@ -116,12 +114,14 @@ class Matrix(Type):
                 return f"Matrix[{a}, ?]"
             case (a, b):
                 return f"Matrix[{a}, {b}]"
+            case _:
+                raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     @property
-    def arity(self):
+    def arity(self) -> Tuple[Optional[int], Optional[int]]:
         return self.rows, self.cols
 
 
@@ -129,13 +129,13 @@ class Matrix(Type):
 class VarArg(Type):
     type: Type
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"({self.type})*"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(repr(self))
 
 
@@ -151,21 +151,21 @@ class Function(Type):
             self.arity = None
         elif isinstance(args, Type):
             self.arity = 1
-        elif isinstance(args, Tuple):
+        elif isinstance(args, Tuple):  # type: ignore
             self.arity = len(args)
         self.args = args
         self.result = result
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"({self.args}) -> {self.result}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
-    def __eq__(self, other):
-        return type(self) == type(other) and self.args == other.args and self.result == other.result
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, Function) and self.args == other.args and self.result == other.result
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(repr(self))
 
     def takes(self, args: list[Type]) -> bool:
@@ -175,7 +175,7 @@ class Function(Type):
             return all(a == self.args.type for a in args)
         elif isinstance(self.args, Type):
             return len(args) == 1 and self.args == args[0]
-        elif isinstance(self.args, Tuple):
+        elif isinstance(self.args, Tuple):  # type: ignore
             return len(self.args) == len(args) and all(a == b for a, b in zip(self.args, args))
         else:
             return False
@@ -185,23 +185,23 @@ class FunctionTypeFactory(Function):
     is_final = False
 
     def __init__(self, args: None | Type | Tuple[Type, ...] | VarArg, result_hint: Type,
-                 result_type_factory: typing.Callable[..., Result[Type]]):
+                 result_type_factory: Callable[..., Result[Type]]):
         super().__init__(args, result_hint)
         self.result_type_factory = result_type_factory
 
     def __call__(self, args: list) -> Result[Type]:
         return self.result_type_factory(*args).map(lambda res: Function(self.args, res))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"TypeFunction: [{hash(self.result_type_factory)}] => {self.args} -> {self.result}"  # todo: sth more informative
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
-    def __eq__(self, other) -> bool:
-        return type(self) == type(other) and self.result_type_factory == other.result_type_factory
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, FunctionTypeFactory) and self.result_type_factory == other.result_type_factory
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(repr(self))
 
 

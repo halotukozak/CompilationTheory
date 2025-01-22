@@ -29,8 +29,9 @@ binary_numerical_type = TS.Function((TS.Int(), TS.Int()), TS.Int()) \
 binary_numerical_condition_type = TS.Function((TS.numerical(), TS.numerical()), TS.Bool())
 
 
-def binary_metrix_type_factory(first: AST.Expr[TS.Matrix], second: AST.Expr[TS.Matrix]) -> Result[TS.Matrix]:
+def binary_metrix_type_factory(first: AST.Expr[TS.Matrix], second: AST.Expr[TS.Matrix]) -> Result[TS.Type]:
     a, b = first.type, second.type
+    assert isinstance(a, TS.Matrix) and isinstance(b, TS.Matrix)
 
     errors = []
     warns = []
@@ -60,12 +61,13 @@ def binary_metrix_type_factory(first: AST.Expr[TS.Matrix], second: AST.Expr[TS.M
         return Success(TS.Matrix(a.rows, a.cols))
 
 
-def binary_vector_type_factory(first: AST.Expr[TS.Vector], second: AST.Expr[TS.Vector]) -> Result[TS.Vector]:
+def binary_vector_type_factory(first: AST.Expr[TS.Vector], second: AST.Expr[TS.Vector]) -> Result[TS.Type]:
     a, b = first.type, second.type
+    assert isinstance(a, TS.Vector) and isinstance(b, TS.Vector)
     if a.arity is None or b.arity is None:
-        return Warn(TS.Vector(), "Vector arity could not be inferred")
+        return Warn(TS.Matrix(), "Vector arity could not be inferred")
     elif a.arity != b.arity:
-        return Failure(TS.Vector(), f"Vector lengths mismatch: {a.arity} != {b.arity}")
+        return Failure(TS.Matrix(), f"Vector lengths mismatch: {a.arity} != {b.arity}")
     else:
         return Success(TS.Matrix(a.arity, a.arity))
 
@@ -122,7 +124,7 @@ unary = prepare({
 binary = prepare({
     "+": binary_numerical_type,
     "-": binary_numerical_type,
-    "*": binary_numerical_type | scalar_type | binary_matrix_type | TS.Function((TS.String(), TS.Int()), TS.String()) ,
+    "*": binary_numerical_type | scalar_type | binary_matrix_type | TS.Function((TS.String(), TS.Int()), TS.String()),
     "/": binary_numerical_type | scalar_type,
     "==": binary_numerical_condition_type,
     "!=": binary_numerical_condition_type,
@@ -139,7 +141,7 @@ binary = prepare({
 
 def init_vector_factory(*args: AST.Expr[TS.Vector]) -> Result[TS.Type]:
     # assert all(isinstance(arg, TS.Vector) for arg in arg_types)
-    arities = set(arg.type.arity for arg in args)
+    arities = set(arg.type.arity for arg in args)  # type: ignore
     if len(arities) == 1:
         return Success(TS.Matrix(len(args), arities.pop()))
     else:
@@ -162,11 +164,11 @@ var_args = prepare({
     "PRINT": TS.Function(VarArg(TS.Any()), TS.unit()),
 })
 
-symbols = {**unary, **binary, **var_args}
+symbols: dict[str, SymbolRef] = {**unary, **binary, **var_args}
 
 
 # todo: maybe split into two functions?
-def get_symbol(name: str):
+def get_symbol(name: str) -> SymbolRef:
     res = symbols[name]
     if isinstance(res, SymbolRef):
         return res.copy()

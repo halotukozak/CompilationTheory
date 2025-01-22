@@ -1,3 +1,5 @@
+# mypy: disable-error-code="no-redef"
+
 from AST import *
 from Environment import EnvTable, Env, Matrix
 from Utils import on, when
@@ -14,24 +16,24 @@ class Error(object):
 class MatrixInterpreter:
     env_table = EnvTable()
 
-    def push_new_env(self):
+    def push_new_env(self) -> None:
         self.env_table.push_env(Env(self.env_table.actual_env))
 
-    def create_fresh_env(self):
+    def create_fresh_env(self) -> None:
         self.env_table.push_env(Env(self.env_table.global_env))
 
-    def pop_env(self):
+    def pop_env(self) -> None:
         self.env_table.pop_env()
 
     @property
-    def current_env(self):
+    def current_env(self) -> Env:
         return self.env_table.actual_env
 
     @on('node')
-    def eval(self, node):
+    def eval(self, node):  # type: ignore
         raise NotImplementedError
 
-    def eval_all(self, tree: list[Statement]):
+    def eval_all(self, tree: list[Statement]) -> None:
         for node in tree:
             self.eval(node)
 
